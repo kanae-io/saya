@@ -35,10 +35,7 @@ class basic_logger;
 // ---
 
 using logger = basic_logger<char>;
-using logger_no_color = basic_logger<char, basic_logger_traits<char, console::no_color>>;
-
 using wlogger = basic_logger<wchar_t>;
-using wlogger_no_color = basic_logger<wchar_t, basic_logger_traits<wchar_t, console::no_color>>;
 
 } // saya
 

@@ -9,7 +9,8 @@
 TEST(Logger, NoPrompt)
 {
     std::ostringstream oss;
-    saya::logger_no_color l({}, oss, oss);
+    saya::logger l({}, oss, oss);
+    l.color(false);
 
     EXPECT_TRUE(oss.str().empty());
 
@@ -21,6 +22,7 @@ TEST(Logger, SingleLineWithColor)
 {
     std::ostringstream oss;
     saya::logger l{APP_NAME, oss, oss};
+    // l.color(true);
 
     l.info() << "Hello" << ", " << "INFO" << std::endl;
     EXPECT_EQ("[" + APP_NAME + "] \x1B[37m(INFO)\x1B[0m " + "Hello, INFO\n", oss.str());
