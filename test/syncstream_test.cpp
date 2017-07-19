@@ -1,7 +1,15 @@
 #include "saya_test.hpp"
 #include "saya/syncstream.hpp"
 
+#include "boost/range/irange.hpp"
+#include "boost/algorithm/string/classification.hpp" // is_any_of
+#include "boost/algorithm/string/split.hpp"
+
 #include <sstream>
+#include <thread>
+#include <vector>
+//#include <mutex>
+
 
 TEST(SyncStream, TempObject)
 {
@@ -165,5 +173,42 @@ TEST(SyncStream, Nested)
         EXPECT_EQ("Third tryFirst trySecond try", oss.str());
     }
     EXPECT_EQ("Third tryFirst trySecond try", oss.str());
+}
+
+TEST(SyncStream, Threaded)
+{
+    static unsigned const COUNT = 10000;
+
+//    std::mutex m;
+    std::ostringstream oss;
+
+    std::vector<std::thread> threads;
+    threads.reserve(COUNT);
+
+    for (auto i : boost::irange(0u, COUNT)) {
+        (void)i;
+
+        threads.emplace_back([&oss] {
+//            std::lock_guard<std::mutex> lock(m);
+            saya::osyncstream(oss) << "a" << "b" << "c" << "d" << "e" << "f" << "g" << "h" << "i" << "j" << "k" << "l" << "m" << "n" << "o" << "p" << "q" << "r" << "s" << "t" << "u" << "v" << "w" << "x" << "y" << "z" << std::endl;
+        });
+    }
+
+    for (auto i : boost::irange(0u, COUNT)) {
+        threads[i].join();
+    }
+
+    std::vector<std::string> res;
+    res.reserve(COUNT);
+
+    auto const str = oss.str();
+    boost::split(res, str, boost::is_any_of("\n"));
+
+    ASSERT_EQ(COUNT + 1, res.size());
+    res.pop_back();
+
+    for (auto const& line : res) {
+        ASSERT_EQ("abcdefghijklmnopqrstuvwxyz", line);
+    }
 }
 
