@@ -1,0 +1,8 @@
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
+find_program(CMAKE_C_COMPILER NAMES clang)
+find_program(CMAKE_CXX_COMPILER NAMES clang++)
+add_definitions(-DLLVM_USE_LINKER=gold)
+
