@@ -13,7 +13,7 @@ class basic_voidstreambuf final : public std::basic_streambuf<CharT>
 {
 public:
     basic_voidstreambuf() = default;
-    explicit basic_voidstreambuf(basic_voidstreambuf const&) = delete;
+    basic_voidstreambuf(basic_voidstreambuf const&) = delete;
     basic_voidstreambuf& operator=(basic_voidstreambuf const&) = delete;
 };
 
@@ -24,7 +24,7 @@ class basic_voidstream final
 {
 public:
     basic_voidstream() = default;
-    explicit basic_voidstream(basic_voidstream const&) = delete;
+    basic_voidstream(basic_voidstream const&) = delete;
     basic_voidstream& operator=(basic_voidstream const&) = delete;
 };
 

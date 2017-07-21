@@ -4,7 +4,7 @@
 #include "saya/error.hpp"
 #include "saya/gumbo/common.hpp"
 
-#include "boost/format.hpp"
+#include <boost/format.hpp>
 
 namespace saya { namespace gumbo {
 

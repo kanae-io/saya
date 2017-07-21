@@ -36,7 +36,7 @@ mkdir /usr/local/my-project-prefix/
 Recommended build options are as follows:
 
     ./bootstrap.sh --with-toolset=clang --without-libraries=mpi,python,graph_parallel -with-icu=/usr/lib/x86_64-linux-gnu --prefix=/usr/local/my-project-prefix/
-    ./b2 toolset=clang threading=multi variant=release link=shared runtime-link=shared address-model=64 cflags="-march=native" cxxflags="-std=gnu++14" define=BOOST_SYSTEM_NO_DEPRECATED -j5
+    ./b2 toolset=clang threading=multi variant=release link=shared runtime-link=shared address-model=64 cflags="-march=native" cxxflags="-std=c++14" define=BOOST_SYSTEM_NO_DEPRECATED -j5
 
 ---
 
@@ -126,5 +126,5 @@ add_dependencies(your_program saya)
 ## License
 Copyright (c) 2017- Nana Sakisaka.
 
-Distributed under the Boost Software License, Version 1.0.
-(See accompanying file [LICENSE](LICENSE) or copy at [http://www.boost.org/LICENSE_1_0.txt](http://www.boost.org/LICENSE_1_0.txt))
+Distributed under the MIT License; see [LICENSE](LICENSE) for the copy.
+

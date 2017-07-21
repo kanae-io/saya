@@ -1,7 +1,7 @@
 #ifndef SAYA_ENCODING_ERROR_HPP_
 #define SAYA_ENCODING_ERROR_HPP_
 
-#include "boost/format.hpp"
+#include <boost/format.hpp>
 
 #include <unicode/utypes.h> // u_errorName()
 

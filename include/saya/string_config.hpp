@@ -1,8 +1,8 @@
 #ifndef SAYA_STRING_CONFIG_HPP_
 #define SAYA_STRING_CONFIG_HPP_
 
-#include "boost/preprocessor/expand.hpp"
-#include "boost/preprocessor/cat.hpp"
+#include <boost/preprocessor/expand.hpp>
+#include <boost/preprocessor/cat.hpp>
 
 #include <string>
 

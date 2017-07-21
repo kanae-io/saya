@@ -5,7 +5,7 @@
 #include "saya/gumbo/error.hpp"
 #include "saya/gumbo/make_range.hpp"
 
-#include "boost/algorithm/string/trim_all.hpp"
+#include <boost/algorithm/string/trim_all.hpp>
 
 namespace saya { namespace gumbo {
 

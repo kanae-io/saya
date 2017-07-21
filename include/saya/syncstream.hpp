@@ -4,7 +4,7 @@
 #include "saya/syncstream_fwd.hpp"
 #include "saya/stream_lock.hpp"
 
-#include "boost/assert.hpp"
+#include <boost/assert.hpp>
 
 #include <ostream>
 #include <sstream>
@@ -29,11 +29,11 @@ public:
     explicit basic_syncbuf(streambuf_type* out)
         : stringbuf_type()
         , sbp_(out)
-        , mptr_(stream_lock::get_lock(sbp_))
+        , mptr_(stream_lock::get_mutex(sbp_))
     {}
 
-    explicit basic_syncbuf(basic_syncbuf&& rhs) noexcept
-        : stringbuf_type(std::move(*static_cast<stringbuf_type*>(std::addressof(rhs))))
+    basic_syncbuf(basic_syncbuf&& rhs) noexcept
+        : stringbuf_type(std::move(rhs))
         , sbp_(std::move(rhs.sbp_))
         , mptr_(std::move(rhs.mptr_))
         , need_flush_(std::move(rhs.need_flush_))
@@ -50,61 +50,49 @@ public:
                 // ...
             }
             try {
-                stream_lock::release_lock(mptr_, sbp_);
+                if (mptr_) stream_lock::release_mutex(mptr_, sbp_);
             } catch (...) {
                 // ...
             }
 
             stringbuf_type::operator=(std::move(rhs));
-            sbp_ = nullptr;
-            mptr_.reset();
-            need_flush_ = false;
-
-            using std::swap;
-            swap(sbp_, rhs.sbp_);
-            swap(mptr_, rhs.mptr_);
+            sbp_ = std::exchange(rhs.sbp_, nullptr);
+            mptr_ = std::exchange(rhs.mptr_, nullptr);
+            need_flush_ = std::exchange(rhs.need_flush_, false);
         }
         return *this;
     }
 
-    virtual ~basic_syncbuf() noexcept
+    virtual ~basic_syncbuf()
     {
-        try {
-            this->emit();
-        } catch (...) {
-            // ...
-        }
-
-        try {
-            stream_lock::release_lock(mptr_, sbp_);
-        } catch (...) {
-            // ...
-        }
+        this->emit();
     }
 
-    bool emit()
+    void emit() try
     {
-        bool res = true;
-        bool const precond = sbp_ && mptr_;
+        if (!sbp_) return;
+
         auto const len = this->showmanyc();
+        stream_lock::lock_type lock(*mptr_);
 
-        if (precond && (len > 0 || need_flush_)) {
-            stream_lock::lock_type lock(*mptr_);
-
-            if (len > 0 && len != sbp_->sputn(this->pbase(), len)) {
-                res = false;
-            }
-
-            if (need_flush_) {
-                if (sbp_->pubsync() == -1) {
-                    res = false;
-                }
-            }
+        if (len > 0) {
+            sbp_->sputn(this->pbase(), len);
+        }
+        if (need_flush_) {
+            sbp_->pubsync();
         }
 
-        need_flush_ = false;
-        this->str({});
-        return res;
+        stream_lock::release_mutex(mptr_, sbp_);
+        sbp_ = nullptr;
+
+    } catch (...) {
+        try {
+            if (mptr_) stream_lock::release_mutex(mptr_, sbp_);
+        } catch (...) {
+            // ...
+        }
+        sbp_ = nullptr;
+        throw;
     }
 
     void swap(basic_syncbuf& rhs) noexcept
@@ -125,15 +113,11 @@ public:
 protected:
     virtual int sync() override
     {
-        if (this->force_flush()) {
-            this->emit();
-        } else {
-            need_flush_ = true;
-        }
+        need_flush_ = true;
         return 0;
     }
 
-    virtual bool force_flush() const { return false; }
+    // virtual bool force_flush() const { return false; }
 
 private:
     streambuf_type* sbp_{nullptr};
@@ -142,12 +126,6 @@ private:
 };
 
 } // saya
-
-template<class CharT, class Traits, class Allocator>
-inline void swap(saya::basic_syncbuf<CharT, Traits, Allocator>& lhs, saya::basic_syncbuf<CharT, Traits, Allocator>& rhs)
-{
-    lhs.swap(rhs);
-}
 
 
 namespace saya {
@@ -167,7 +145,7 @@ public:
     using ostream_type = std::basic_ostream<CharT, Traits>;
     using streambuf_type = std::basic_streambuf<CharT, Traits>;
 
-    explicit basic_osyncstream(ostream_type& os)
+    basic_osyncstream(ostream_type& os)
         : ostream_type()
         , buf_(os.rdbuf())
     {
@@ -181,20 +159,20 @@ public:
         ostream_type::init(&buf_);
     }
 
-    explicit basic_osyncstream(basic_osyncstream&& rhs) noexcept
-        : ostream_type(std::move(*static_cast<ostream_type*>(std::addressof(rhs))))
+    basic_osyncstream(basic_osyncstream&& rhs) noexcept
+        : ostream_type(std::move(rhs))
         , buf_(std::move(rhs.buf_))
     {
         ostream_type::init(&buf_);
     }
 
-    virtual ~basic_osyncstream() noexcept {}
+    virtual ~basic_osyncstream() = default;
 
     basic_osyncstream& operator=(basic_osyncstream&& rhs) noexcept
     {
         if (this != std::addressof(rhs)) {
-            ostream_type::operator=(std::move(*static_cast<ostream_type*>(std::addressof(rhs))));
-            buf_ = std::move(rhs.buf_);
+            ostream_type::operator=(std::move(rhs));
+            buf_ = std::exchange(rhs.buf_, nullptr);
         }
 
         return *this;
@@ -210,12 +188,18 @@ public:
         }
     }
 
-    void emit()
+    void emit() try
     {
         typename ostream_type::sentry const s{*this};
-        if (!s || !buf_.emit()) {
+        if (!s) {
             this->setstate(std::ios::badbit);
+        } else {
+            buf_.emit();
         }
+
+    } catch (...) {
+        this->setstate(std::ios::badbit);
+        throw;
     }
 
 private:
@@ -223,11 +207,5 @@ private:
 };
 
 } // saya
-
-template<class CharT, class Traits, class Allocator>
-inline void swap(saya::basic_osyncstream<CharT, Traits, Allocator>& lhs, saya::basic_osyncstream<CharT, Traits, Allocator>& rhs)
-{
-    lhs.swap(rhs);
-}
 
 #endif

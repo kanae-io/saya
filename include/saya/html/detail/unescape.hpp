@@ -5,10 +5,10 @@
 #include "saya/html/detail/escape_common.hpp"
 #include "saya/html/detail/named_character_references_table.hpp"
 
-#include "boost/algorithm/string/case_conv.hpp"
-#include "boost/algorithm/string/replace.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
 
 
 namespace saya { namespace html { namespace detail {

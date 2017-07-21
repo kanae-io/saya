@@ -29,7 +29,7 @@ message(STATUS "saya configuration: ${CMAKE_BUILD_TYPE}")
 
 # Global build config
 
-set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -Wextra -pedantic-errors")
+set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra -pedantic-errors")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0") # -fno-inline -pg
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
@@ -88,6 +88,7 @@ message(STATUS "Using Boost ${SAYA_BOOST_VERSION}")
 message(STATUS "Boost configuration is OK")
 
 # Begin build ---------------------------------------
+set(CMAKE_DEBUG_POSTFIX d)
 
 # Exports
 add_library(saya INTERFACE)

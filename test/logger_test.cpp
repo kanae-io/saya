@@ -16,6 +16,29 @@ TEST(Logger, NoPrompt)
 
     l.info() << "Hello" << ", " << "logger!" << std::endl;
     EXPECT_EQ("(INFO) Hello, logger!\n", oss.str());
+    oss.str({});
+}
+
+TEST(Logger, NoteShouldIndentWell)
+{
+    std::ostringstream oss;
+    saya::logger l(APP_NAME, oss, oss);
+    l.color(false);
+
+    l.note() << "1" << std::endl;
+    l.info() << "test1" << std::endl;
+    EXPECT_EQ("[Test] (INFO)  test1\n         note: 1\n", oss.str());
+    oss.str({});
+
+    l.note() << "2" << std::endl;
+    l.warn() << "test2" << std::endl;
+    EXPECT_EQ("[Test] (WARN)  test2\n         note: 2\n", oss.str());
+    oss.str({});
+
+    l.note() << "3" << std::endl;
+    l.error() << "test3" << std::endl;
+    EXPECT_EQ("[Test] (ERROR) test3\n         note: 3\n", oss.str());
+    oss.str({});
 }
 
 TEST(Logger, SingleLineWithColor)
@@ -25,15 +48,15 @@ TEST(Logger, SingleLineWithColor)
     // l.color(true);
 
     l.info() << "Hello" << ", " << "INFO" << std::endl;
-    EXPECT_EQ("[" + APP_NAME + "] \x1B[37m(INFO)\x1B[0m " + "Hello, INFO\n", oss.str());
+    EXPECT_EQ("\x1B[34m[" + APP_NAME + "]\x1B[0m \x1B[100m\x1B[97mINFO\x1B[0m  " + "Hello, INFO\n", oss.str());
     oss.str({});
 
     l.warn() << "Hello" << ", " << "WARN" << std::endl;
-    EXPECT_EQ("[" + APP_NAME + "] \x1B[43m\x1B[30m(WARN)\x1B[0m " + "Hello, WARN\n", oss.str());
+    EXPECT_EQ("\x1B[34m[" + APP_NAME + "]\x1B[0m \x1B[43m\x1B[30mWARN\x1B[0m  " + "Hello, WARN\n", oss.str());
     oss.str({});
 
     l.error() << "Hello" << ", " << "ERROR" << std::endl;
-    EXPECT_EQ("[" + APP_NAME + "] \x1B[41m\x1B[97m(ERROR)\x1B[0m " + "Hello, ERROR\n", oss.str());
+    EXPECT_EQ("\x1B[34m[" + APP_NAME + "]\x1B[0m \x1B[41m\x1B[97mERROR\x1B[0m " + "Hello, ERROR\n", oss.str());
     oss.str({});
 }
 
