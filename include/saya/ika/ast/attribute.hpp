@@ -16,7 +16,17 @@ struct Attribute : ASTEntity
         Expr
     >;
     std::vector<attr_type> attrs;
+
+    Attribute() = default;
+    explicit Attribute(std::vector<attr_type> const& attrs)
+        : attrs(attrs)
+    {}
 };
+
+inline std::ostream& operator<<(std::ostream& os, std::vector<Attribute::attr_type> const&)
+{
+    return debug::fixed_omitted(os, "Attribute::attrs");
+}
 
 inline std::ostream& operator<<(std::ostream& os, Attribute const& v)
 {

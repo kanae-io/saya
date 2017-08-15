@@ -16,8 +16,8 @@ namespace saya { namespace ika { namespace ast {
 
 struct FuncDefinition : ASTEntity
 {
-    Func* func;
-    Block* block;
+    Func* func{nullptr};
+    Block* block{nullptr};
 };
 
 inline std::ostream& operator<<(std::ostream& os, FuncDefinition const& v)
@@ -33,8 +33,8 @@ inline std::ostream& operator<<(std::ostream& os, FuncDefinition const& v)
 
 struct MacroDefinition : ASTEntity
 {
-    Macro* macro;
-    Geo* geo;
+    Macro* macro{nullptr};
+    Geo* geo{nullptr};
 };
 
 inline std::ostream& operator<<(std::ostream& os, MacroDefinition const& v)
@@ -50,29 +50,27 @@ inline std::ostream& operator<<(std::ostream& os, MacroDefinition const& v)
 
 struct GroupChildSpecifier : ASTEntity
 {
-    Group* child_group;
-    std::vector<std::string> additional_class;
-    boost::optional<Attribute> attr;
+    GroupID child_id;
+    boost::optional<AdditionalClass*> additional_class;
+    boost::optional<Attribute*> attr;
 };
 
 inline std::ostream& operator<<(std::ostream& os, GroupChildSpecifier const& v)
 {
-    BOOST_ASSERT(v.child_group);
-
     return debug::with(
         os,
-        "GroupChild",
-        debug::kv("id", debug::id_arg("." + *v.child_group->id.get())),
-        debug::kv("additional_class", v.additional_class | boost::adaptors::transformed([] (auto const& c) { return "." + c; })),
+        "ChildSpecifier",
+        debug::kv("child_id", debug::id_arg("." + *v.child_id.get())),
+        debug::kv("additional_class", v.additional_class),
         debug::kv("attr", v.attr)
     );
 }
 
 struct GroupDefinition : ASTEntity
 {
-    Group* group;
+    Group* group{nullptr};
     boost::optional<GroupChildSpecifier> child_specifier;
-    Geo* geo;
+    Geo* geo{nullptr};
 };
 
 inline std::ostream& operator<<(std::ostream& os, GroupDefinition const& v)

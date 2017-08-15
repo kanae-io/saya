@@ -213,7 +213,7 @@ public:
                     group_(sl::_r1) |
                     endpoint_(sl::_r1)
                 ) [phx::at_c<0>(sl::_val) = sl::_1] >>
-                additional_class_ [phx::at_c<1>(sl::_val) = sl::_1]
+                additional_class_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
             ] >
             -attribute_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1]
         ;
@@ -239,8 +239,8 @@ public:
             qi::skip(ns::space) [qi::eps] >
             qi::no_skip [
                 qi::lit('.') >
-                group_id_ [phx::at_c<0>(sl::_val) = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_1)]] >
-                additional_class_ [phx::at_c<1>(sl::_val) = sl::_1]
+                group_id_ [phx::at_c<0>(sl::_val) = sl::_1] >
+                additional_class_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
             ] >
             qi::skip(ns::blank) [
                 -attribute_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1]
@@ -262,14 +262,29 @@ public:
         ) [(*sl::_1)[sl::_3]];
         zed::debug(group_definition_);
 
+        additional_class_.name("additional-class");
+        additional_class_ = (
+            *qi::as_string [qi::lit('.') > raw_group_id_]
+        ) [sl::_val = (*sl::_r1)[zed::make_unique<ast::AdditionalClass>(sl::_1)]];
+        zed::debug(additional_class_);
+
         attribute_.name("attribute");
-        attribute_ =
+        attribute_ = (
             qi::lit('[') >
             (
-                ((!qi::lit(']')) > (expr_(sl::_r1) | placeholdable_(sl::_r1))) % qi::lit(',')
+                qi::eps [sl::_a = phx::construct<std::vector<ast::Attribute::attr_type>>()] >
+                (
+                    (
+                        (!qi::lit(']')) > (
+                            expr_(sl::_r1) [phx::push_back(sl::_a, sl::_1)] |
+                            placeholdable_(sl::_r1) [phx::push_back(sl::_a, sl::_1)]
+                        )
+                    )
+                    % qi::lit(',')
+                )
             ) >
             qi::lit(']')
-        ;
+        ) [sl::_val = (*sl::_r1)[zed::make_unique<ast::Attribute>(sl::_a)]];
         zed::debug(attribute_);
 
         // -------------------------------------------------------
@@ -300,7 +315,7 @@ public:
         uop_macro_call_.name("uop-macro-call");
         uop_macro_call_ =
             qi::lexeme [macro_(sl::_r1)] >
-            qi::no_skip [additional_class_] >
+            qi::no_skip [additional_class_(sl::_r1)] >
             qi::skip(ns::blank) [-call_param_(sl::_r1)] >
             qi::skip(ns::blank) [-geo_(sl::_r1)]
         ;
@@ -368,13 +383,17 @@ public:
         // groups
         group_.name("group");
         group_ =
-            qi::lit('.') > group_id_ [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_1)]]
+            qi::lit('.') > (
+                group_id_ >> additional_class_(sl::_r1)
+            ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_1, sl::_2)]]
         ;
         zed::debug(group_);
 
         endpoint_.name("endpoint");
         endpoint_ =
-            qi::lit('#') > endpoint_id_ [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Endpoint>>(sl::_1)]]
+            qi::lit('#') > (
+                endpoint_id_ >> additional_class_(sl::_r1)
+            ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Endpoint>>(sl::_1, sl::_2)]]
         ;
         zed::debug(endpoint_);
 
@@ -621,12 +640,6 @@ public:
         endpoint_id_ = qi::as_string [raw_group_id_];
         zed::debug(endpoint_id_);
 
-        additional_class_.name("additional-class");
-        additional_class_ = *(
-            qi::as_string [qi::lit('.') >> raw_group_id_]
-        );
-        zed::debug(additional_class_);
-
         var_id_.name("var-id");
         var_id_ =
             qi::as_string [raw_id_]
@@ -705,7 +718,10 @@ private:
     rule<iterator_type, ast::GroupDefinition(ast::Root*), blank_type>
     group_definition_;
 
-    rule<iterator_type, ast::Attribute(ast::Root*), blank_type>
+    rule<iterator_type, ast::AdditionalClass*(ast::Root*)>
+    additional_class_;
+
+    rule<iterator_type, ast::Attribute*(ast::Root*), blank_type, locals<std::vector<ast::Attribute::attr_type>>>
     attribute_;
 
     // -------------------------------------------------------
@@ -825,9 +841,6 @@ private:
     // meta
     rule<iterator_type, std::string()>
     raw_id_, raw_group_id_;
-
-    rule<iterator_type, std::vector<std::string>()>
-    additional_class_;
 
     rule<iterator_type, ast::NSID()>
     ns_id_;

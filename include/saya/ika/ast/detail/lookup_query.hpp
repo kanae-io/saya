@@ -92,16 +92,19 @@ struct LookupQuery<Group>
 {
     std::deque<GroupID> qualifier;
     GroupID target;
+    boost::optional<AdditionalClass*> additional_class;
 
     std::size_t ctx_hash{static_cast<std::size_t>(-1)};
 
-    explicit LookupQuery(std::deque<GroupID> const& qualifier, GroupID const& target)
+    explicit LookupQuery(std::deque<GroupID> const& qualifier, GroupID const& target, boost::optional<AdditionalClass*> const& additional_class)
         : qualifier(qualifier)
         , target(target)
+        , additional_class(additional_class)
     {}
 
-    explicit LookupQuery(GroupID const& target)
+    explicit LookupQuery(GroupID const& target, boost::optional<AdditionalClass*> const& additional_class)
         : target(target)
+        , additional_class(additional_class)
     {}
 };
 
@@ -110,16 +113,19 @@ struct LookupQuery<Endpoint>
 {
     std::deque<GroupID> qualifier;
     EndpointID target;
+    boost::optional<AdditionalClass*> additional_class;
 
     std::size_t ctx_hash{static_cast<std::size_t>(-1)};
 
-    explicit LookupQuery(std::deque<GroupID> const& qualifier, EndpointID const& target)
+    explicit LookupQuery(std::deque<GroupID> const& qualifier, EndpointID const& target, boost::optional<AdditionalClass*> const& additional_class)
         : qualifier(qualifier)
         , target(target)
+        , additional_class(additional_class)
     {}
 
-    explicit LookupQuery(EndpointID const& target)
+    explicit LookupQuery(EndpointID const& target, boost::optional<AdditionalClass*> const& additional_class)
         : target(target)
+        , additional_class(additional_class)
     {}
 };
 

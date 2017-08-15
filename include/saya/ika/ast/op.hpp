@@ -14,9 +14,9 @@ namespace saya { namespace ika { namespace ast {
 template<>
 struct UOp<ops::FuncCall> : ASTEntity
 {
-    Func const* func;
+    Func* func{nullptr};
     CallParam param;
-    boost::optional<Block const*> block;
+    boost::optional<Block*> block;
 };
 inline std::ostream& operator<<(std::ostream& os, UOp<ops::FuncCall> const&)
 {
@@ -26,10 +26,10 @@ inline std::ostream& operator<<(std::ostream& os, UOp<ops::FuncCall> const&)
 template<>
 struct UOp<ops::MacroCall> : ASTEntity
 {
-    Macro const* macro;
-    std::vector<std::string> additional_class;
+    Macro* macro{nullptr};
+    boost::optional<AdditionalClass*> additional_class;
     boost::optional<CallParam> param;
-    boost::optional<Geo const*> geo;
+    boost::optional<Geo*> geo;
 };
 inline std::ostream& operator<<(std::ostream& os, UOp<ops::MacroCall> const&)
 {

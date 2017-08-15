@@ -156,11 +156,62 @@ SAYA_IKA_V_IMPL(Expr, {
 })
 
 SAYA_IKA_V_IMPL(PrimaryExpr, {
+    boost::apply_visitor(v_ast{l_}, e.expr);
 })
 
 // ------------------------------------------------
 
+template<class T>
+struct v_groupable : boost::static_visitor<void>
+{
+    explicit v_groupable(T* attr)
+        : attr(attr)
+    {
+        BOOST_ASSERT(attr);
+    }
+
+    void operator()(ast::Group* v) const
+    {
+        BOOST_ASSERT(v);
+        (*v)[attr];
+    }
+
+    void operator()(ast::Endpoint* v) const
+    {
+        BOOST_ASSERT(v);
+        (*v)[attr];
+    }
+
+private:
+    T* attr;
+};
+
 SAYA_IKA_V_IMPL(Declaration, {
+    if (!e.is_inline) {
+        l_->info() << "skipped (not inlined)" << std::endl;
+
+    } else {
+        if (!e.attr && !e.additional_class) {
+            l_->info() << "skipped (no viable definition for inline declaration)" << std::endl;
+            return;
+        }
+
+        l_->info() << "inline declaration" << std::endl;
+
+        if (e.attr) {
+            l_->info() << "assigning attribute..." << std::endl;
+
+            auto const visitor = v_groupable<ast::Attribute>{*e.attr};
+            boost::apply_visitor(visitor, e.groupable);
+        }
+
+        if (e.additional_class) {
+            l_->info() << "assigning additional classes..." << std::endl;
+
+            auto const visitor = v_groupable<ast::AdditionalClass>{*e.additional_class};
+            boost::apply_visitor(visitor, e.groupable);
+        }
+    }
 })
 
 SAYA_IKA_V_IMPL(GroupDefinition, {

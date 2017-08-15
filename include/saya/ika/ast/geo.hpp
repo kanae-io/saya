@@ -29,11 +29,11 @@ struct Geo : ASTEntity
 
     Dir dir;
     Justify justify;
-    boost::optional<Attribute> attr;
+    boost::optional<Attribute*> attr;
     boost::optional<Block*> block;
 
     Geo() = default;
-    explicit Geo(Dir const& dir, Justify const& j, boost::optional<Attribute> const& attr, boost::optional<Block*> const& block)
+    explicit Geo(Dir const& dir, Justify const& j, boost::optional<Attribute*> const& attr, boost::optional<Block*> const& block)
         : dir(dir), justify(j), attr(attr), block(block)
     {}
 };

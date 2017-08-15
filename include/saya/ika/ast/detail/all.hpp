@@ -10,6 +10,8 @@
 #include "saya/ika/ast/id.hpp"
 #include "saya/ika/ast/lit.hpp"
 
+#include "saya/ika/ast/additional_class.hpp"
+
 #include "saya/ika/ast/block.hpp"
 #include "saya/ika/ast/callable.hpp"
 #include "saya/ika/ast/keyword.hpp"

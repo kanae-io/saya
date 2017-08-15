@@ -4,6 +4,7 @@
 #include "saya/ika/ast_fwd.hpp"
 #include "saya/ika/ast/detail/lookup_query.hpp"
 #include "saya/ika/ast/namespace.hpp"
+#include "saya/ika/ast/attribute.hpp"
 
 #include "saya/logger.hpp"
 
@@ -83,7 +84,7 @@ public:
     template<
         class T,
         typename std::enable_if_t<
-            is_block_v<T>,
+            std::is_same<Attribute, T>::value || std::is_same<AdditionalClass, T>::value || is_block_v<T>,
             int
         > = 0
     >
@@ -175,7 +176,8 @@ public:
                         query.qualifier | boost::adaptors::transformed(flyweights::extractor{}),
                         "."
                     ) + "." + flyweights::extractor{}(query.target)
-                }
+                },
+                query.additional_class
             );
         }
 
@@ -227,6 +229,12 @@ private:
     literals_type literals_;
 
     // ------------------------------------------------------
+
+    using additional_classes_type = std::vector<std::unique_ptr<AdditionalClass>>;
+    additional_classes_type additional_classes_;
+
+    using attributes_type = std::vector<std::unique_ptr<Attribute>>;
+    attributes_type attributes_;
 
     using geos_type = std::vector<std::unique_ptr<Geo>>;
     geos_type geos_;
@@ -354,6 +362,26 @@ struct proxy_dispatcher<Namespace>
         -> decltype(&Root::namespaces_)
     {
         return &Root::namespaces_;
+    }
+};
+
+template<>
+struct proxy_dispatcher<AdditionalClass>
+{
+    static auto dispatch() noexcept
+        -> decltype(&Root::additional_classes_)
+    {
+        return &Root::additional_classes_;
+    }
+};
+
+template<>
+struct proxy_dispatcher<Attribute>
+{
+    static auto dispatch() noexcept
+        -> decltype(&Root::attributes_)
+    {
+        return &Root::attributes_;
     }
 };
 

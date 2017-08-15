@@ -15,32 +15,32 @@ namespace saya { namespace ika { namespace ast {
 struct Func : ASTEntity
 {
     FuncID id;
-    Block const* definition{nullptr};
+    Block* definition{nullptr};
 
     explicit Func(FuncID const& id)
         : id(id)
     {}
 
-    void operator[](Block const* b)
+    void operator[](Block* v)
     {
-        BOOST_ASSERT(b);
-        definition = b;
+        BOOST_ASSERT(v);
+        definition = v;
     }
 };
 
 struct Macro : ASTEntity
 {
     MacroID id;
-    Geo const* definition{nullptr};
+    Geo* definition{nullptr};
 
     explicit Macro(MacroID const& id)
         : id(id)
     {}
 
-    void operator[](Geo const* g)
+    void operator[](Geo* v)
     {
-        BOOST_ASSERT(g);
-        definition = g;
+        BOOST_ASSERT(v);
+        definition = v;
     }
 };
 

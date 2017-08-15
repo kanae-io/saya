@@ -19,9 +19,13 @@ struct Namespace : ASTEntity
     {}
 };
 
-inline std::ostream& operator<<(std::ostream& os, Namespace const& ns)
+inline std::ostream& operator<<(std::ostream& os, Namespace const& v)
 {
-    return os << "Namespace(" << ns.id << ")";
+    return debug::with(
+        os,
+        "Namespace",
+        debug::kv("id", debug::id_arg(*v.id.get()))
+    );
 }
 
 }}} // saya

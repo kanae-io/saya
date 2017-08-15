@@ -71,6 +71,8 @@ BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_IKA_VM_LIT_TYPEMAP)
 
 // --------------------------------------------------
 
+struct AdditionalClass;
+
 struct Var;
 
 struct Func;
