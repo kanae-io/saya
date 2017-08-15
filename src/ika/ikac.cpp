@@ -1,6 +1,8 @@
 #include "saya/ika/compiler.hpp"
 #include "saya/ika/compiler/bridge.hpp"
 
+#include "saya/ika/evaluator.hpp"
+
 #include "saya/ika/grammar/to_ast.hpp"
 
 #include "saya/logger.hpp"
@@ -79,12 +81,25 @@ public:
             // TBD
         }};
 
+
+        saya::logger l_eval{"ikac::eval"};
+
+        saya::ika::evaluator
+        evaluator{
+            &l_eval
+        };
+
         // for each input files
         for (auto const& path : brg.input_files()) try {
             auto const buf{saya::read<char>(path)};
 
+            l_.info() << "compiling..." << std::endl;
             compiler.set_buf(&buf);
-            compiler.compile();
+            auto root = compiler.compile();
+            l_.info() << "compiled." << std::endl;
+
+            l_.info() << "evaluating..." << std::endl;
+            evaluator.eval(*root);
 
         } catch (saya::io_error const& e) {
             l_.error() << e.what() << std::endl;

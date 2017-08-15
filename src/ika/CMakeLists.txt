@@ -2,7 +2,7 @@ set(SAYA_IKA_COMPILE_DEFINITIONS "BOOST_SPIRIT_USE_PHOENIX_V3=1")
 
 add_subdirectory(grammar)
 
-add_executable(saya_ika_compiler "ikac.cpp")
+add_executable(saya_ika_compiler "ikac.cpp" "evaluator.cpp")
 
 set_target_properties(
   saya_ika_compiler PROPERTIES

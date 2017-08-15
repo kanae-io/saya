@@ -210,7 +210,7 @@ public:
     template<class Stream>
     inline void debug(Stream&& os) const
     {
-        os << boost::format("Identifier cache hit rate: %.2f%%") % prof_id_.rate() << "\n";
+        os << boost::format("Identifier cache hit rate: %.2f%%") % prof_id_.rate() << std::endl;
     }
     #else
     template<class Stream>

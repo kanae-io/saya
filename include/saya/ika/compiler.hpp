@@ -80,7 +80,7 @@ public:
             throw compile_error("unprocessed characters remain");
         }
 
-        l_->info() << "parse success";
+        l_->info() << "parse success" << std::endl;
         return root;
     }
 
