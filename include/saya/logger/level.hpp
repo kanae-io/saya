@@ -9,6 +9,8 @@ struct INFO {};
 struct WARN {};
 struct ERROR {};
 
+struct NOTE {};
+
 }} // saya
 
 #endif

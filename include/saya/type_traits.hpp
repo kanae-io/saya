@@ -1,12 +1,10 @@
 #ifndef SAYA_TYPE_TRAITS_HPP_
 #define SAYA_TYPE_TRAITS_HPP_
 
-#include "boost/variant/variant_fwd.hpp"
+#include <boost/variant/variant_fwd.hpp>
 #include <type_traits>
 
 namespace saya {
-
-extern void* enabler;
 
 template<class T>
 struct is_variant : std::false_type {};

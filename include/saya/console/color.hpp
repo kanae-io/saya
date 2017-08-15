@@ -4,11 +4,14 @@
 #include "saya/console_fwd.hpp"
 #include "saya/string_config.hpp"
 
-#include "boost/preprocessor/tuple.hpp"
-#include "boost/preprocessor/seq.hpp"
-#include "boost/preprocessor/cat.hpp"
-#include "boost/preprocessor/expand.hpp"
-#include "boost/preprocessor/stringize.hpp"
+#include <boost/preprocessor/tuple.hpp>
+#include <boost/preprocessor/seq.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/expand.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
+#include <iostream>
+#include <string>
 
 
 namespace saya { namespace console { namespace detail {
@@ -24,8 +27,7 @@ inline std::string operator+(char const* c, no_color_t const&) { return {c}; }
 inline std::wstring operator+(no_color_t const&, wchar_t const* c) { return {c}; }
 inline std::wstring operator+(wchar_t const* c, no_color_t const&) { return {c}; }
 
-template<class Stream>
-inline Stream& operator<<(Stream& os, no_color_t const&)
+inline std::ostream& operator<<(std::ostream& os, no_color_t const&)
 {
     return os;
 }
@@ -112,7 +114,7 @@ namespace saya { namespace console {
 
 
 #define SAYA_COLOR_SYSTEM_DEF(r, cfg, system) \
-    static BOOST_PP_TUPLE_ELEM(0, cfg) const* system() { \
+    static constexpr BOOST_PP_TUPLE_ELEM(0, cfg) const* system() noexcept { \
         return \
             BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_PREFIX) \
             BOOST_PP_TUPLE_ELEM(1, cfg)( \
@@ -123,7 +125,7 @@ namespace saya { namespace console {
     }
 
 #define SAYA_COLOR_COLOR_DEF(r, cfg, color) \
-    static BOOST_PP_TUPLE_ELEM(0, cfg) const* color() { \
+    static constexpr BOOST_PP_TUPLE_ELEM(0, cfg) const* color() noexcept { \
         return \
             BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_PREFIX) \
             BOOST_PP_TUPLE_ELEM(1, cfg)( \
@@ -136,7 +138,7 @@ namespace saya { namespace console {
     }
 
 #define SAYA_COLOR_256_DEF(r, cfg, c256) \
-    static BOOST_PP_TUPLE_ELEM(0, cfg) const* BOOST_PP_CAT(code, c256)() { \
+    static constexpr BOOST_PP_TUPLE_ELEM(0, cfg) const* BOOST_PP_CAT(code, c256)() noexcept { \
         return \
             BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_PREFIX) \
             BOOST_PP_TUPLE_ELEM(1, cfg)( \
@@ -175,13 +177,13 @@ SAYA_STRING_CONFIG_DEFINE(SAYA_DEF)
 // no color defs -----------------------------
 
 #define SAYA_COLOR_SYSTEM_DEF(r, _, system) \
-    static detail::no_color_t system() { return {}; }
+    static constexpr detail::no_color_t system() noexcept { return {}; }
 
 #define SAYA_COLOR_COLOR_DEF(r, _, color) \
-    static detail::no_color_t color() { return {}; }
+    static constexpr detail::no_color_t color() noexcept { return {}; }
 
 #define SAYA_COLOR_256_DEF(r, _, c256) \
-    static detail::no_color_t BOOST_PP_CAT(code, c256)() { return {}; }
+    static constexpr detail::no_color_t BOOST_PP_CAT(code, c256)() noexcept { return {}; }
 
 template<>
 struct basic_color<void>
@@ -197,6 +199,70 @@ struct basic_color<void>
         BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_256_DEF, _, SAYA_COLOR_TAG_256)
     };
 };
+
+inline static void list_colors()
+{
+    static auto const expand5 = [] (unsigned c) {
+        static std::string const SPACER{" "};
+
+        if (c < 10) {
+            return SPACER + "  " + std::to_string(c) + SPACER;
+        } else if (c < 100) {
+            return SPACER + " " + std::to_string(c) + SPACER;
+        } else {
+            return SPACER + std::to_string(c) + SPACER;
+        }
+    };
+
+    #define SAYA_DEF_DUMMY \
+        basic_color<char>::fg::YELLOW() << \
+        basic_color<char>::bg::BLACK() << \
+        basic_color<char>::BOLD() << \
+        basic_color<char>::UNDERLINED() << \
+        "(dirty dummy string)" << basic_color<char>::RESET() << " " << \
+        basic_color<char>::fg::YELLOW() << \
+        basic_color<char>::bg::BLACK() << \
+        basic_color<char>::BOLD() << \
+        basic_color<char>::UNDERLINED()
+
+    std::cout << "\n[system] saya::console::NAME(); -----------------------\n";
+    #undef SAYA_DEF
+    #define SAYA_DEF(r, _, system) \
+        std::cout << SAYA_DEF_DUMMY << basic_color<char>::system() << BOOST_PP_STRINGIZE(system) << basic_color<char>::RESET() << "\n";
+    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_SYSTEM)
+
+    #undef SAYA_DEF_DUMMY
+
+    // -------------------------------------------
+
+    std::cout << "\n[fg] saya::console::fg::NAME(); ------------------------\n";
+    #undef SAYA_DEF
+    #define SAYA_DEF(r, _, c) \
+        std::cout << basic_color<char>::fg::c() << BOOST_PP_STRINGIZE(c) << basic_color<char>::RESET() << "\n";
+    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_COLOR)
+
+    std::cout << "\n[bg] saya::console::bg::NAME(); ------------------------\n";
+    #undef SAYA_DEF
+    #define SAYA_DEF(r, _, c) \
+        std::cout << basic_color<char>::bg::c() << BOOST_PP_STRINGIZE(c) << basic_color<char>::RESET() << "\n";
+    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_COLOR)
+
+    std::cout << "\n\n[fg - 256] saya::console::fg::codeN(); ------------------------\n";
+    #undef SAYA_DEF
+    #define SAYA_DEF(r, _, c) \
+        std::cout << basic_color<char>::fg::BOOST_PP_CAT(code, c)() << expand5(c) << basic_color<char>::RESET() << " "; \
+        if (c % 8 == 0) std::cout << "\n";
+    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_256)
+
+    std::cout << "\n\n[bg - 256] saya::console::bg::codeN(); ------------------------\n";
+    #undef SAYA_DEF
+    #define SAYA_DEF(r, _, c) \
+        std::cout << basic_color<char>::bg::BOOST_PP_CAT(code, c)() << expand5(c) << basic_color<char>::RESET() << " "; \
+        if (c % 8 == 0) std::cout << "\n";
+    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_256)
+
+    std::cout << std::endl;
+}
 
 #undef SAYA_COLOR_256_DEF
 #undef SAYA_COLOR_COLOR_DEF
@@ -265,6 +331,8 @@ struct basic_color<void>
 #undef SAYA_COLOR_bg_LIGHTMAGENTA
 #undef SAYA_COLOR_bg_LIGHTCYAN
 #undef SAYA_COLOR_bg_WHITE
+
+#undef SAYA_DEF
 
 }} // saya
 

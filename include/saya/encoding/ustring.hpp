@@ -3,10 +3,9 @@
 
 #include "saya/encoding/error.hpp"
 #include "saya/unicode/string.hpp"
-#include "saya/type_traits.hpp"
 
-#include "boost/iterator/iterator_facade.hpp"
-#include "boost/scope_exit.hpp"
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/scope_exit.hpp>
 
 #include <unicode/unistr.h> // UnicodeString
 #include <unicode/ustring.h> // u_strFromWCS, u_strToWCS
@@ -174,7 +173,7 @@ public:
 
     template<
         class InputIterator,
-        typename std::enable_if<!std::is_base_of<ustring_iterator_base, InputIterator>::value>::type*& = saya::enabler
+        typename std::enable_if<!std::is_base_of<ustring_iterator_base, InputIterator>::value>::type = 0
     >
     explicit ustring(InputIterator first, InputIterator last)
         : istr_(static_cast<UChar const*>(first), std::distance(first, last))
@@ -182,7 +181,7 @@ public:
 
     template<
         class InputIterator,
-        typename std::enable_if<std::is_base_of<ustring_iterator_base, InputIterator>::value>::type*& = saya::enabler
+        typename std::enable_if<std::is_base_of<ustring_iterator_base, InputIterator>::value>::type = 0
     >
     explicit ustring(InputIterator first, InputIterator last)
         : istr_(first.p->istr().getBuffer() + first.index, last.index - first.index)

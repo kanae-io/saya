@@ -2,7 +2,7 @@
 #define SAYA_HTML_DETAIL_UNESCAPE_TRAITS_HPP_
 
 #include "saya/string_config.hpp"
-#include "boost/regex.hpp"
+#include <boost/regex.hpp>
 
 namespace saya { namespace html { namespace detail {
 

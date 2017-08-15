@@ -3,7 +3,7 @@
 
 #include "saya/string_config.hpp"
 
-#include "boost/regex.hpp"
+#include <boost/regex.hpp>
 #include <string>
 
 namespace saya {

@@ -1,11 +1,18 @@
 #ifndef SAYA_STREAM_LOCK_HPP_
 #define SAYA_STREAM_LOCK_HPP_
 
+#include <boost/core/ignore_unused.hpp>
+#include <boost/assert.hpp>
+
 #include <unordered_map>
 #include <mutex>
 #include <memory>
 
+
 namespace saya {
+
+// NB: To use this entire feature, user must call `stream_lock::Init()`
+// before using any saya functions AND only after possible sync_with_stdio()
 
 class stream_lock
 {
@@ -16,12 +23,19 @@ public:
     using mutex_wptr_type = std::weak_ptr<mutex_type>;
     using sbuf_type = void;
 
-    static mutex_ptr_type get_lock(sbuf_type* sbptr)
+    static void Init()
     {
-        if (!sbptr) return {};
-        lock_type lock(m());
+        boost::ignore_unused(global_m_());
+        boost::ignore_unused(mmap_());
+    }
+
+    static mutex_ptr_type get_mutex(sbuf_type* sbptr)
+    {
+        BOOST_ASSERT(sbptr);
+
+        lock_type lock(global_m_());
         mutex_ptr_type res;
-        mutex_wptr_type& mwp = mtx_for_buf()[sbptr];
+        mutex_wptr_type& mwp = mmap_()[sbptr];
 
         if (mwp.expired()) {
             mwp = res = std::make_shared<mutex_type>();
@@ -31,29 +45,35 @@ public:
         return res;
     }
 
-    static void release_lock(mutex_ptr_type& mp, sbuf_type* sbptr)
+    static void release_mutex(mutex_ptr_type& mp, sbuf_type* sbptr)
     {
-        if (!mp && !sbptr) return;
-        lock_type lock(m());
-        auto const it = mtx_for_buf().find(sbptr);
+        BOOST_ASSERT(mp);
+        BOOST_ASSERT(sbptr);
+
+        lock_type lock(global_m_());
+        auto const it = mmap_().find(sbptr);
+        BOOST_ASSERT(it != mmap_().end());
+
+        // should we do this here, or leave it to the caller?
         mp.reset();
 
-        if (it != mtx_for_buf().end() && it->second.expired()) {
-            mtx_for_buf().erase(it);
+        if (it->second.expired()) {
+            mmap_().erase(it);
         }
     }
 
 private:
-    static mutex_type&
-    m()
+    using mmap_type = std::unordered_map<sbuf_type*, mutex_wptr_type>;
+
+    static mutex_type& global_m_()
     {
         static mutex_type i;
         return i;
     }
-    static std::unordered_map<sbuf_type*, mutex_wptr_type>&
-    mtx_for_buf()
+
+    static mmap_type& mmap_()
     {
-        static std::unordered_map<sbuf_type*, mutex_wptr_type> i;
+        static mmap_type i;
         return i;
     }
 };

@@ -2,7 +2,7 @@
 #define SAYA_TEST_FILESYSTEM_HPP_
 #if defined(SAYA_TESTING)
 
-#include "boost/filesystem/path.hpp"
+#include <boost/filesystem/path.hpp>
 #include <ostream>
 
 namespace boost { namespace filesystem {

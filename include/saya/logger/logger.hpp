@@ -7,7 +7,9 @@
 #include "saya/logger/stream.hpp"
 // #include "saya/logger/access.hpp"
 
+#include <deque>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <atomic>
 
@@ -32,37 +34,39 @@ public:
     template<class Level>
     using logger_stream_type = basic_logger_stream<self_type, Level>;
 
+    using mutex_type = std::mutex;
+    using lock_type = std::lock_guard<mutex_type>;
+    using note_type = logger_stream_type<logger_level::NOTE>;
+    using notes_type = std::deque<std::unique_ptr<note_type>>;
+
     explicit basic_logger(string_type const& prompt = {})
-        : prompt_(prompt)
+        : color_(true)
+        , prompt_(prompt)
         , out_(stream_object_type::cout().rdbuf())
         , err_(stream_object_type::cerr().rdbuf())
-    {
-        color_ = true;
-    }
+    {}
 
     explicit basic_logger(
         string_type const& prompt,
         ostream_type& out,
         ostream_type& err
     )
-        : prompt_(prompt)
+        : color_(true)
+        , prompt_(prompt)
         , out_(out.rdbuf())
         , err_(err.rdbuf())
-    {
-        color_ = true;
-    }
+    {}
 
     explicit basic_logger(
         string_type const& prompt,
         ofstream_type& out,
         ofstream_type& err
     )
-        : prompt_(prompt)
+        : color_(false)
+        , prompt_(prompt)
         , out_(out.rdbuf())
         , err_(err.rdbuf())
-    {
-        color_ = false;
-    }
+    {}
 
     logger_stream_type<logger_level::INFO>
     info() const { return {const_cast<self_type*>(this)}; }
@@ -73,19 +77,37 @@ public:
     logger_stream_type<logger_level::ERROR>
     error() const { return {const_cast<self_type*>(this)}; }
 
+    // 'extra' output for in addition to all types above
+    note_type&
+    note() const
+    {
+        lock_type lock(note_mtx_);
+        notes_.emplace_back(std::make_unique<note_type>(const_cast<self_type*>(this)));
+        return *const_cast<note_type*>(notes_.back().get());
+    }
+
     void prompt(string_type const& name) const
     {
-        std::lock_guard<mutex_type> lock(mtx_);
+        lock_type lock(prompt_mtx_);
         prompt_ = name;
+    }
+
+    void prompt_color(char const* color_code) const
+    {
+        lock_type lock(prompt_mtx_);
+        prompt_color_ = color_code;
     }
 
     void color(bool flag) const { color_ = flag; }
 
 protected:
-    using mutex_type = std::mutex;
-    mutable mutex_type mtx_;
-    mutable string_type prompt_{};
     mutable std::atomic<bool> color_;
+    mutable mutex_type prompt_mtx_;
+    mutable mutex_type note_mtx_;
+    mutable string_type prompt_{};
+    mutable char const* prompt_color_{traits_type::color_type::fg::BLUE()};
+
+    mutable notes_type notes_;
 
     streambuf_type* out_;
     streambuf_type* err_;

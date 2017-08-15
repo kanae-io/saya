@@ -25,6 +25,20 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "saya configuration: ${CMAKE_BUILD_TYPE}")
 
+# ------------------------------------------------
+
+# Global build config
+
+set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra -pedantic-errors")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0") # -fno-inline -pg
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+
+# ------------------------------------------------
+
 find_package(Threads REQUIRED)
 
 find_package(PkgConfig REQUIRED)
@@ -73,17 +87,9 @@ endif()
 message(STATUS "Using Boost ${SAYA_BOOST_VERSION}")
 message(STATUS "Boost configuration is OK")
 
-# ------------------------------------------------
+# Begin build ---------------------------------------
+set(CMAKE_DEBUG_POSTFIX d)
 
-set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -Wextra -pedantic-errors")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0") # -fno-inline -pg
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
-
-# Tests
-include(CTest)
-add_subdirectory(test)
-
-# ------------------------------------------------
 # Exports
 add_library(saya INTERFACE)
 set(SAYA_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -96,8 +102,16 @@ target_link_libraries(
   ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
 )
-
 install(TARGETS saya EXPORT saya-export)
+
+# non-header-only libraries
+add_subdirectory(src)
+
+# Tests
+include(CTest)
+add_subdirectory(test)
+
+# Final export
 export(
   EXPORT saya-export
   FILE saya-config.cmake

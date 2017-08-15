@@ -1,8 +1,8 @@
 #ifndef SAYA_SYSTEM_HPP_
 #define SAYA_SYSTEM_HPP_
 
-#include "boost/filesystem/path.hpp"
-#include "boost/optional.hpp"
+#include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 #include <cstdlib>
 
 namespace saya {

@@ -24,6 +24,12 @@ function(saya_enable_gtest gtest_source_dir test_entrypoint_src include_dirs sys
     "${PROJECT_NAME}_gtest" SYSTEM BEFORE PUBLIC
     ${gtest_include_dirs}
   )
+
+  set_target_properties(
+    "${PROJECT_NAME}_gtest" PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/test"
+  )
+
   saya_remove_gtest_warnings("${PROJECT_NAME}_gtest")
 
   # ----------------------------------
@@ -45,6 +51,7 @@ function(saya_enable_gtest gtest_source_dir test_entrypoint_src include_dirs sys
 
   set_target_properties(
     "${PROJECT_NAME}_gtest_main" PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/test"
     COMPILE_DEFINITIONS "${compile_definitions}"
   )
   saya_remove_gtest_warnings("${PROJECT_NAME}_gtest_main")
@@ -90,6 +97,7 @@ function(saya_generate_tests gtest_source_dir test_files include_dirs system_inc
     set_target_properties(
       ${test_target_name} PROPERTIES
       OUTPUT_NAME ${test_executable_name}
+      RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/test"
       COMPILE_DEFINITIONS "${compile_definitions}"
     )
     add_test(
