@@ -2,16 +2,15 @@
 #define SAYA_LOGGER_LOGGER_HPP_
 
 #include "saya/logger_fwd.hpp"
+#include "saya/logger/logger_env.hpp"
 #include "saya/logger/level.hpp"
 #include "saya/logger/traits.hpp"
 #include "saya/logger/stream.hpp"
 // #include "saya/logger/access.hpp"
 
 #include <deque>
-#include <fstream>
 #include <memory>
 #include <mutex>
-#include <atomic>
 
 namespace saya {
 
@@ -24,6 +23,7 @@ public:
 
     using char_type = CharT;
     using traits_type = Traits;
+    using env_type = basic_logger_env<char_type, traits_type>;
     using self_type = basic_logger<char_type, traits_type>;
     using string_type = typename traits_type::string_type;
     using ostream_type = typename traits_type::ostream_type;
@@ -40,33 +40,31 @@ public:
     using notes_type = std::deque<std::unique_ptr<note_type>>;
 
     explicit basic_logger(string_type const& prompt = {})
-        : color_(true)
-        , prompt_(prompt)
-        , out_(stream_object_type::cout().rdbuf())
-        , err_(stream_object_type::cerr().rdbuf())
+        : prompt_(prompt)
+        , env_()
     {}
 
     explicit basic_logger(
-        string_type const& prompt,
-        ostream_type& out,
-        ostream_type& err
+        env_type env,
+        string_type const& prompt = {}
     )
-        : color_(true)
-        , prompt_(prompt)
-        , out_(out.rdbuf())
-        , err_(err.rdbuf())
+        : prompt_(prompt)
+        , env_(std::move(env))
     {}
 
-    explicit basic_logger(
-        string_type const& prompt,
-        ofstream_type& out,
-        ofstream_type& err
-    )
-        : color_(false)
-        , prompt_(prompt)
-        , out_(out.rdbuf())
-        , err_(err.rdbuf())
+    explicit basic_logger(basic_logger const& other, string_type const& prompt = {})
+        : basic_logger(other.env_, prompt)
     {}
+
+
+    basic_logger(basic_logger const&) = delete;
+    basic_logger(basic_logger&&) = delete;
+
+    basic_logger& operator=(basic_logger const&) = delete;
+    basic_logger& operator=(basic_logger&&) = delete;
+
+    ~basic_logger() = default;
+
 
     logger_stream_type<logger_level::INFO>
     info() const { return {const_cast<self_type*>(this)}; }
@@ -98,10 +96,15 @@ public:
         prompt_color_ = color_code;
     }
 
-    void color(bool flag) const { color_ = flag; }
+    void color(bool flag) const
+    {
+        lock_type lock(prompt_mtx_);
+        env_.need_color = flag;
+    }
+
+    env_type env() const { return env_; }
 
 protected:
-    mutable std::atomic<bool> color_;
     mutable mutex_type prompt_mtx_;
     mutable mutex_type note_mtx_;
     mutable string_type prompt_{};
@@ -109,8 +112,7 @@ protected:
 
     mutable notes_type notes_;
 
-    streambuf_type* out_;
-    streambuf_type* err_;
+    mutable env_type env_;
 };
 
 } // saya

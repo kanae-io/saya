@@ -101,7 +101,7 @@ hex_of_rgb_;
 class to_ast::Impl
 {
 public:
-    explicit Impl(to_ast::root_rule_type& root_, saya::logger* const l)
+    explicit Impl(to_ast::root_rule_type& root_)
     {
         namespace sp = boost::spirit;
         namespace sl = boost::spirit::labels;
@@ -113,8 +113,6 @@ public:
         // static auto const extract_root = [] (to_ast::root_type& r) {
         //     return r.get();
         // };
-
-        boost::ignore_unused(l);
 
         // ---------------------------------------
         root_.name("root");
@@ -188,12 +186,16 @@ public:
         // see: http://en.cppreference.com/w/cpp/language/operator_precedence
         expr_.name("expr");
         expr_ = qi::skip [
-            qi::skip(ns::blank) [uop_func_call_(sl::_r1)] |
+            qi::skip(ns::blank) [
+                uop_func_call_(sl::_r1)
+            ] |
+
             uop_add_family_(sl::_r1) |
 
-            // bop_pow_(sl::_r1) |
-            bop_mul_family_(sl::_r1) |
+            bop_mul_family_(sl::_r1) | // bop_pow_(sl::_r1) |
+
             // bop_add_family_(sl::_r1) |
+
             // bop_assign_(sl::_r1)
 
             primary_expr_(sl::_r1)
@@ -286,6 +288,7 @@ public:
         u_entity_ =
             qi::skip(ns::blank) [
                 uop_func_call_(sl::_r1) |
+                uop_subscript_(sl::_r1) |
                 uop_add_family_(sl::_r1)
             ] |
 
@@ -327,6 +330,16 @@ public:
         );
         zed::debug(uop_add_family_);
 
+        uop_subscript_.name("uop-subscript");
+        uop_subscript_ =
+            var_(sl::_r1) >> (
+                qi::lit('[') >
+                lit_Symbol_(sl::_r1) >
+                qi::lit(']')
+            )
+        ;
+        zed::debug(uop_subscript_);
+
         // -------------------------------------------------------
         // bop
         bop_mul_family_.name("bop-mul-family");
@@ -367,7 +380,7 @@ public:
 
         bop_assign_.name("bop-assign");
         bop_assign_ = qi::skip(ns::blank) [
-            (var_(sl::_r1) >> qi::lit('=')) >
+            ((uop_subscript_(sl::_r1) | var_(sl::_r1)) >> qi::lit('=')) >
             u_entity_(sl::_r1)
         ];
         zed::debug(bop_assign_);
@@ -484,7 +497,29 @@ public:
 
         #include "saya/ika/vm/internal_undef.hpp"
 
+        lit_Map_.name("lit-Map");
+        lit_Map_ =
+            qi::lit('{') > qi::skip(ns::space) [
+                *(
+                    (
+                        qi::lexeme [lit_Symbol_(sl::_r1) > qi::lit(ast::lit::Symbol::MAGIC_TOKEN())] >
+                        expr_(sl::_r1)
+                    ) [
+                        sl::_val[*sl::_1] = sl::_2
+                    ]
+                    % qi::lit(',')
+                )
+            ] >
+            qi::lit('}')
+        ;
+        zed::debug(lit_Map_);
+
         // ---
+        lit_Symbol_ = qi::as_string [
+            (ns::alpha - (qi::char_('-') | qi::char_(ast::lit::Symbol::MAGIC_TOKEN()))) >>
+            *((ns::alnum | qi::char_('_')) - (qi::char_('-') | qi::char_(ast::lit::Symbol::MAGIC_TOKEN())))
+        ] [sl::_val = (*sl::_r1)[zed::make_unique<ast::lit::Symbol>(sl::_1)]]
+        ;
 
         lit_String_ =
             sq_string_ [sl::_val = (*sl::_r1)[zed::make_unique<ast::lit::String>(sl::_1)]]
@@ -493,7 +528,7 @@ public:
         // store color code in 32bit unsigned 0xRRGGBBAA format.
         // %= is important here!!
         lit_Color_ %=
-            qi::lit('#') > (
+            qi::lit(ast::lit::Color::MAGIC_TOKEN()) > (
                 // #RRGGBBAA
                 // hex_of_rrggbbaa_ [sl::_val = sl::_1] |
 
@@ -525,7 +560,7 @@ public:
         ;
 
         lit_Int64_ =
-            &qi::lit('-') >> zt::int64_
+            &qi::lit(ast::lit::Int64::MAGIC_TOKEN()) >> zt::int64_
         ;
 
         lit_UInt64_ =
@@ -760,6 +795,9 @@ private:
     rule<iterator_type, ast::UOp<ast::ops::Not>(ast::Root*)>
     uop_not_;
 
+    rule<iterator_type, ast::UOp<ast::ops::Subscript>(ast::Root*), blank_type>
+    uop_subscript_;
+
     // -------------------------------------------------------
     // bop
     rule<iterator_type, ast::BOp<ast::ops::Pow>(ast::Root*)>
@@ -797,8 +835,14 @@ private:
 
     // -------------------------------------------------------
     // lits
+    rule<iterator_type, ast::lit::Map(ast::Root*), blank_type>
+    lit_Map_;
+
     rule<iterator_type, ast::lit::String*(ast::Root*), blank_type> // pass-by-pointer
     lit_String_;
+
+    rule<iterator_type, ast::lit::Symbol*(ast::Root*)>
+    lit_Symbol_;
 
     rule<iterator_type, ast::lit::Int64(ast::Root*), blank_type>
     lit_Int64_;
@@ -862,16 +906,11 @@ private:
     // utils & trivial stuff
     rule<iterator_type, std::string(), locals<char>>
     sq_string_;
-
-    // ------------------------------------------------------
-    #if 0
-    saya::logger* const l_;
-    #endif
 };
 
-to_ast::to_ast(saya::logger* const l)
+to_ast::to_ast()
     : to_ast::base_type(root_, "Ika")
-    , impl_(std::make_unique<to_ast::Impl>(root_, l))
+    , impl_(std::make_unique<to_ast::Impl>(root_))
 {}
 
 // pimpl

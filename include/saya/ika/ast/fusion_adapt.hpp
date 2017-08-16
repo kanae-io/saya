@@ -1,7 +1,7 @@
 #ifndef SAYA_IKA_AST_FUSION_ADAPT_HPP
 #define SAYA_IKA_AST_FUSION_ADAPT_HPP
 
-#include "saya/ika/ast/detail/all.hpp"
+#include "saya/ika/ast/all.hpp"
 
 #include <boost/fusion/include/adapt_struct.hpp>
 
@@ -17,17 +17,20 @@
 
 #include "saya/ika/vm/internal_def.hpp"
 
-#define SAYA_DEF_I(vtmapid, lit_name, unused0) \
+#define SAYA_DEF_I(unused0, lit_name, unused1) \
     BOOST_FUSION_ADAPT_STRUCT( \
         saya::ika::ast::lit::lit_name, \
-        (saya::ika::vm::TypeID, type_id) \
-        (SAYA_IKA_VM_INTERNAL_TYPE_FOR(SAYA_IKA_VM_LIT_VTYPEMAP_FOR(vtmapid)), v) \
+        (saya::ika::ast::lit::lit_name::internal_type, v) \
     )
 
 #define SAYA_DEF(z, i, d) \
     SAYA_DEF_I BOOST_PP_SEQ_ELEM(i, d)
 
 BOOST_PP_EXPAND(BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP), SAYA_DEF, SAYA_IKA_VM_LIT_TYPEMAP))
+
+// meta types
+SAYA_DEF_I(_, Map, _)
+
 
 #undef SAYA_DEF_I
 #undef SAYA_DEF
@@ -188,6 +191,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::UOp<saya::ika::ast::ops::AddFamily>,
     (auto, term0)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    saya::ika::ast::UOp<saya::ika::ast::ops::Subscript>,
+    (saya::ika::ast::Var*, var)
+    (saya::ika::ast::lit::Symbol*, key)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(

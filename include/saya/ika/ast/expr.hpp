@@ -13,8 +13,10 @@ struct UEntity : ASTEntity
 {
     using entity_type = boost::variant<
         boost::recursive_wrapper<UOp<ops::FuncCall>>,
+        boost::recursive_wrapper<UOp<ops::Subscript>>,
         boost::recursive_wrapper<UOp<ops::AddFamily>>,
         boost::recursive_wrapper<UOp<ops::Not>>,
+
         boost::recursive_wrapper<PrimaryExpr>
     >;
 

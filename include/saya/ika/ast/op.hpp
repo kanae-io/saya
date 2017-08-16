@@ -60,6 +60,17 @@ inline std::ostream& operator<<(std::ostream& os, UOp<ops::AddFamily> const& v)
     }
 }
 
+template<>
+struct UOp<ops::Subscript> : ASTEntity
+{
+    Var* var{nullptr};
+    lit::Symbol* key{nullptr};
+};
+inline std::ostream& operator<<(std::ostream& os, UOp<ops::Subscript> const&)
+{
+    return debug::fixed_id(os, "UOp", "Subscript");
+}
+
 // ---------------------------------------------
 
 template<>
@@ -116,7 +127,7 @@ inline std::ostream& operator<<(std::ostream& os, BOp<ops::AddFamily> const& v)
 template<>
 struct BOp<ops::Assign> : ASTEntity
 {
-    using lhs_type = Var*;
+    using lhs_type = boost::variant<Var*, UOp<ops::Subscript>>;
     using rhs_type = UEntity;
 
     lhs_type term0;

@@ -3,9 +3,7 @@
 
 // #include "saya/zed/destructor_handler.hpp"
 
-#include "saya/ika/ast/detail/all.hpp"
-
-#include "saya/logger.hpp"
+#include "saya/ika/ast/all.hpp"
 
 #include <boost/spirit/include/qi_grammar.hpp>
 #include <boost/spirit/include/qi_rule.hpp>
@@ -33,7 +31,7 @@ public:
     using root_type = std::unique_ptr<ast::Root>;
     using root_rule_type = boost::spirit::qi::rule<iterator_type, root_type(), blank_type>;
 
-    explicit to_ast(saya::logger* const l);
+    explicit to_ast();
 
     ~to_ast();
 

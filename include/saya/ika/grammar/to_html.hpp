@@ -1,9 +1,7 @@
 #ifndef SAYA_IKA_GRAMMAR_TO_HTML_HPP
 #define SAYA_IKA_GRAMMAR_TO_HTML_HPP
 
-#include "saya/ika/ast/detail/all.hpp"
-
-#include "saya/logger.hpp"
+#include "saya/ika/ast/all.hpp"
 
 #include <boost/spirit/include/karma_grammar.hpp>
 #include <boost/spirit/include/karma_rule.hpp>
@@ -26,7 +24,7 @@ public:
     using root_type = ast::Root;
     using root_rule_type = boost::spirit::karma::rule<iterator_type, root_type()>;
 
-    explicit to_html(saya::logger* const l);
+    explicit to_html();
 
     ~to_html();
 

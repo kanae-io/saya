@@ -31,6 +31,7 @@
 
 #define SAYA_IKA_VM_LIT_TYPEMAP \
     ((1, String, true)) \
+    ((1, Symbol, true)) \
     ((4, Int64, false)) \
     ((5, UInt64, false)) \
     ((6, Real, false)) \
@@ -55,3 +56,6 @@
 
 #define SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY \
     BOOST_PP_SEQ_FOR_EACH(SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY_DEF, _, SAYA_IKA_VM_LIT_TYPEMAP)
+
+#define SAYA_IKA_VM_METALIT_TYPEMAP \
+    ((BOOST_PP_IDENTITY((std::unordered_map<::saya::ika::ast::lit::String, SAYA_IKA_VM_LIT_ANY>))))

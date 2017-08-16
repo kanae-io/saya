@@ -48,22 +48,3 @@ set(
 )
 
 saya_generate_tests("${SAYA_GTEST_ROOT}" "${tests}" "${include_dirs}" "${system_include_dirs}" "${libs}" "${test_flags}")
-
-# ---------------------------------------------
-
-resolve_tests(
-  "ika/ast/ika_ast_geo"
-)
-
-set(
-  libs
-  saya_ika_grammar
-  saya
-  ${Boost_LIBRARIES}
-  ${ICU_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-)
-
-saya_generate_tests("${SAYA_GTEST_ROOT}" "${tests}" "${include_dirs}" "${system_include_dirs}" "${libs}" "${test_flags}")
-

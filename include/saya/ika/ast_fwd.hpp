@@ -41,6 +41,9 @@ struct MulFamily {};
 struct AddFamily {};
 
 struct Assign {};
+
+struct Subscript {};
+
 } // ops
 
 template<class Op>
@@ -66,6 +69,8 @@ BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_IKA_VM_LIT_TYPEMAP)
 #undef SAYA_DEF
 
 #include "saya/ika/vm/internal_undef.hpp"
+
+struct Map;
 
 } // lit
 

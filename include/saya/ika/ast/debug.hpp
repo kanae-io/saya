@@ -107,8 +107,8 @@ std::ostream& operator<<(std::ostream& os, id_arg_wrapper<T> const& v)
 template<class K, class V, class F = void, class Enabled = void>
 struct term;
 
-template<class K, class V, class F>
-struct term<K, V, F>
+template<class K, class V>
+struct term<K, V>
 {
     K k;
     V const& v;
@@ -121,8 +121,8 @@ struct term<K, V, F>
 //     V const v;
 // };
 
-template<class K, class V, class F>
-struct term<K, V const*, F>
+template<class K, class V>
+struct term<K, V const*>
 {
     K k;
     V const* v;

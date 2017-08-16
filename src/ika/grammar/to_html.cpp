@@ -11,7 +11,7 @@ namespace saya { namespace ika { namespace grammar {
 class to_html::Impl
 {
 public:
-    explicit Impl(to_html::root_rule_type& root_, saya::logger* const l)
+    explicit Impl(to_html::root_rule_type& root_)
     {
         namespace sp = boost::spirit;
         namespace sl = boost::spirit::labels;
@@ -20,8 +20,6 @@ public:
         // namespace zt = saya::zed::terminals;
         namespace phx = boost::phoenix;
 
-        boost::ignore_unused(l);
-
     } // Impl::Impl
 
 private:
@@ -29,9 +27,9 @@ private:
 }; // Impl
 
 
-to_html::to_html(saya::logger* const l)
+to_html::to_html()
     : to_html::base_type(root_, "Ika-html")
-    , impl_(std::make_unique<to_html::Impl>(root_, l))
+    , impl_(std::make_unique<to_html::Impl>(root_))
 {}
 
 // pimpl

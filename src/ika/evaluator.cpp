@@ -1,5 +1,7 @@
 #include "saya/ika/evaluator.hpp"
-#include "saya/ika/ast/detail/all.hpp"
+#include "saya/ika/ast/all.hpp"
+
+#include "saya/logger.hpp"
 
 #include "saya/console/color.hpp"
 #include "saya/type_traits.hpp"
@@ -74,11 +76,10 @@ wrap(T& v) { return {v}; }
 
 struct context
 {
-    explicit context(ast::Root& root, saya::logger* l)
+    explicit context(ast::Root& root, saya::logger& l)
         : root(root)
         , l(l)
     {
-        BOOST_ASSERT(l);
         default_stack_.push_front(nullptr);
     }
 
@@ -99,7 +100,7 @@ struct context
     context& operator=(context&&) = default;
 
     ast::Root& root;
-    saya::logger* const l;
+    saya::logger& l;
 
     unsigned stmt_depth{0u};
 
@@ -134,6 +135,7 @@ struct v_ast : boost::static_visitor<void>
     void operator()(ast::UOp<ast::ops::FuncCall>& e) const;
     void operator()(ast::UOp<ast::ops::MacroCall>& e) const;
     void operator()(ast::UOp<ast::ops::AddFamily>& e) const;
+    void operator()(ast::UOp<ast::ops::Subscript>& e) const;
 
     void operator()(ast::BOp<ast::ops::Pow>& e) const;
     void operator()(ast::BOp<ast::ops::MulFamily>& e) const;
@@ -219,14 +221,14 @@ inline std::ostream& operator<<(std::ostream& os, action const& v)
 #define SAYA_IKA_V_IMPL(impl_ast_elem_, impl_stmt_) \
     void v_ast::operator()(ast::impl_ast_elem_& e) const \
     { \
-        { this->ctx_.l->info() << ::saya::console::color::BOLD() << ::saya::console::color::fg::BLUE() << "found" << ::saya::console::color::RESET() << " " << BOOST_PP_STRINGIZE(impl_ast_elem_) << std::endl; } \
+        { this->ctx_.l.info() << ::saya::console::color::BOLD() << ::saya::console::color::fg::BLUE() << "found" << ::saya::console::color::RESET() << " " << BOOST_PP_STRINGIZE(impl_ast_elem_) << std::endl; } \
         { impl_stmt_ } \
     }
 
 #define SAYA_IKA_V_IMPL_PTR(impl_ast_elem_, impl_stmt_) \
     void v_ast::operator()(ast::impl_ast_elem_*& ep) const \
     { \
-        { this->ctx_.l->info() << ::saya::console::color::BOLD() << ::saya::console::color::fg::BLUE() << "found" << ::saya::console::color::RESET() << " " << BOOST_PP_STRINGIZE(impl_ast_elem_) << std::endl; } \
+        { this->ctx_.l.info() << ::saya::console::color::BOLD() << ::saya::console::color::fg::BLUE() << "found" << ::saya::console::color::RESET() << " " << BOOST_PP_STRINGIZE(impl_ast_elem_) << std::endl; } \
         BOOST_ASSERT(ep); \
         auto& e = *ep; \
         { impl_stmt_ } \
@@ -312,30 +314,25 @@ private:
 
 SAYA_IKA_V_IMPL(Declaration, {
     if (!e.is_inline) {
-        ctx_.l->info() << indent << colored::gray{"skipped (not inlined)"} << std::endl;
+        ctx_.l.info() << indent << colored::gray{"skipped (not inlined)"} << std::endl;
         return;
     }
 
-    ctx_.l->info() << indent << colored::yellow{"(inline declaration)"} << std::endl;
+    ctx_.l.info() << indent << colored::yellow{"(inline declaration)"} << std::endl;
 
     if (ctx_.defaulter()) {
-        ctx_.l->info() << indent << colored::action{"assigning defaulted definition..."} << std::endl;
+        ctx_.l.info() << indent << colored::action{"assigning defaulted definition..."} << std::endl;
         auto const visitor = v_groupable<std::nullptr_t>{ctx_.defaulter()};
         boost::apply_visitor(visitor, e.groupable);
 
     } else {
-        ctx_.l->info() << indent << colored::action{"assigning empty definition..."} << std::endl;
+        ctx_.l.info() << indent << colored::action{"assigning empty definition..."} << std::endl;
         auto const visitor = v_groupable<std::nullptr_t>{nullptr};
         boost::apply_visitor(visitor, e.groupable);
     }
 
-    if (!e.attr) {
-        ctx_.l->info() << indent << colored::gray{"skipped (no viable definition for inline declaration)"} << std::endl;
-        return;
-    }
-
     if (e.attr) {
-        ctx_.l->info() << indent << colored::action{"assigning attribute..."} << std::endl;
+        ctx_.l.info() << indent << colored::action{"assigning attribute..."} << std::endl;
 
         auto const visitor = v_groupable<ast::Attribute>{*e.attr};
         boost::apply_visitor(visitor, e.groupable);
@@ -349,15 +346,15 @@ SAYA_IKA_V_IMPL(GroupDefinition, {
 
     if (e.child_specifier) g = e.child_specifier->child;
 
-    ctx_.l->info() << indent << colored::yellow{"Group"} << " " << colored::id{g->pretty_id()} << std::endl;
+    ctx_.l.info() << indent << colored::yellow{"Group"} << " " << colored::id{g->pretty_id()} << std::endl;
 
     {
-        ctx_.l->info() << indent << colored::action{"evaluating definition..."} << std::endl;
+        ctx_.l.info() << indent << colored::action{"evaluating definition..."} << std::endl;
         auto w = wrap(e.geo);
         boost::apply_visitor(v_ast{ctx_}, w);
     }
 
-    ctx_.l->info() << indent << colored::action{"assigning definition..."} << std::endl;
+    ctx_.l.info() << indent << colored::action{"assigning definition..."} << std::endl;
     (*g)[e.geo];
 })
 
@@ -388,6 +385,9 @@ SAYA_IKA_V_IMPL(UOp<ast::ops::MacroCall>, {
 SAYA_IKA_V_IMPL(UOp<ast::ops::AddFamily>, {
 })
 
+SAYA_IKA_V_IMPL(UOp<ast::ops::Subscript>, {
+})
+
 SAYA_IKA_V_IMPL(BOp<ast::ops::Pow>, {
 })
 
@@ -412,12 +412,12 @@ SAYA_IKA_V_IMPL_PTR(Geo, {
     ctx_.push_default();
 
     if (ctx_.stmt_depth == 1) {
-        ctx_.l->info() << indent << colored::yellow{"(global layout definition)"} << std::endl;
+        ctx_.l.info() << indent << colored::yellow{"(global layout definition)"} << std::endl;
         ctx_.root.layout = ep;
     }
 
     if (e.block) {
-        ctx_.l->info() << indent << colored::action{"evaluating block..."} << std::endl;
+        ctx_.l.info() << indent << colored::action{"evaluating block..."} << std::endl;
 
         auto w = wrap(*e.block);
         boost::apply_visitor(v_ast{ctx_}, w);
@@ -441,6 +441,10 @@ SAYA_IKA_V_IMPL_PTR(Var, {
 // ------------------------------------------------
 
 SAYA_IKA_V_IMPL_PTR(lit::String, {
+
+})
+
+SAYA_IKA_V_IMPL_PTR(lit::Symbol, {
 
 })
 
@@ -480,7 +484,9 @@ SAYA_IKA_V_IMPL(lit::Pct, {
 
 void evaluator::eval(ast::Root& root)
 {
-    detail::visitor::context ctx{root, l_};
+    saya::logger l{l_env_};
+
+    detail::visitor::context ctx{root, l};
     auto w = detail::visitor::wrap(root);
     boost::apply_visitor(detail::visitor::v_ast{ctx}, w);
 

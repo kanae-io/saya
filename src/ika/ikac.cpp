@@ -1,9 +1,8 @@
-#include "saya/ika/compiler.hpp"
 #include "saya/ika/compiler/bridge.hpp"
-
+#include "saya/ika/compiler.hpp"
 #include "saya/ika/evaluator.hpp"
 
-#include "saya/ika/grammar/to_ast.hpp"
+#include "saya/ika/ast/all.hpp"
 
 #include "saya/logger.hpp"
 #include "saya/filesystem.hpp"
@@ -76,36 +75,27 @@ public:
 
         // compile ----------------------------------------------
 
-        saya::ika::compiler<saya::ika::grammar::to_ast>
-        compiler{&l_, saya::ika::compiler_options{
-            // TBD
+        saya::ika::compiler
+        compiler{l_.env(), saya::ika::compiler_options{
+            brg.ikastd(),
         }};
-
-
-        saya::logger l_eval{"ikac::eval"};
 
         saya::ika::evaluator
         evaluator{
-            &l_eval
+            l_.env()
         };
 
         // for each input files
         for (auto const& path : brg.input_files()) try {
-            auto const buf{saya::read<char>(path)};
+            auto const bundle = saya::ika::make_source(path);
+            compiler.compile(bundle);
 
-            l_.info() << "compiling..." << std::endl;
-            compiler.set_buf(&buf);
-            auto root = compiler.compile();
-            l_.info() << "compiled." << std::endl;
-
-            l_.info() << "evaluating..." << std::endl;
-
-            try {
-                evaluator.eval(*root);
-            } catch (saya::ika::eval_error const& e) {
-                l_.error() << e.what() << std::endl;
-                return EXIT_FAILURE;
-            }
+            // try {
+            //     evaluator.eval(*root);
+            // } catch (saya::ika::eval_error const& e) {
+            //     l_.error() << e.what() << std::endl;
+            //     return EXIT_FAILURE;
+            // }
 
         } catch (saya::io_error const& e) {
             l_.error() << e.what() << std::endl;
