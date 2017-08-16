@@ -12,6 +12,7 @@ struct Namespace : ASTEntity
     static constexpr char const* GLOBAL_ID() noexcept { return "[global]"; }
 
     NSID id;
+    std::vector<Stmt> stmt_list;
 
     Namespace() = default;
     explicit Namespace(NSID const& id)
@@ -24,7 +25,8 @@ inline std::ostream& operator<<(std::ostream& os, Namespace const& v)
     return debug::with(
         os,
         "Namespace",
-        debug::kv("id", debug::id_arg(*v.id.get()))
+        debug::kv("id", v.id),
+        debug::kv("stmt_list", v.stmt_list)
     );
 }
 

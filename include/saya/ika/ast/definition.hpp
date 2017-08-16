@@ -9,9 +9,6 @@
 #include "saya/ika/ast/group.hpp"
 #include "saya/ika/ast/geo.hpp"
 
-#include <boost/range/adaptor/transformed.hpp>
-
-
 namespace saya { namespace ika { namespace ast {
 
 struct FuncDefinition : ASTEntity
@@ -27,7 +24,7 @@ inline std::ostream& operator<<(std::ostream& os, FuncDefinition const& v)
     return debug::with(
         os,
         "FuncDef",
-        debug::kv("id", debug::id_arg(*v.func->id.get()))
+        debug::kv("id", v.func->id)
     );
 }
 
@@ -44,7 +41,7 @@ inline std::ostream& operator<<(std::ostream& os, MacroDefinition const& v)
     return debug::with(
         os,
         "MacroDef",
-        debug::kv("id", debug::id_arg(*v.macro->id.get()))
+        debug::kv("id", v.macro->id)
     );
 }
 
@@ -80,7 +77,7 @@ inline std::ostream& operator<<(std::ostream& os, GroupDefinition const& v)
     return debug::with(
         os,
         "GroupDef",
-        debug::kv("id", debug::id_arg("." + *v.group->id.get())),
+        debug::kv("id", v.group->id),
         debug::kv("c", v.child_specifier)
     );
 }

@@ -128,13 +128,8 @@ public:
         zed::debug(root_);
 
         stmt_.name("stmt");
-        stmt_ =
-            (
-                namespace_(sl::_r1) > qi::lit('{') >
-                (stmt_(sl::_r1) % stmt_break_) >
-                qi::lit('}') >>
-                qi::eps [(*sl::_r1)[ast::Root::Context::NAMESPACE]]
-            ) |
+        stmt_ %=
+            namespace_(sl::_r1) |
 
             geo_(sl::_r1) |
 
@@ -210,7 +205,7 @@ public:
             qi::lexeme [
                 qi::omit [-qi::lit('!') [phx::at_c<3>(sl::_val) = false]] >>
                 (
-                    group_(sl::_r1) |
+                    group_(sl::_r1, false) |
                     endpoint_(sl::_r1)
                 ) [phx::at_c<0>(sl::_val) = sl::_1] >>
                 additional_class_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
@@ -253,12 +248,13 @@ public:
         group_definition_.name("group-definition");
         group_definition_ = (
             qi::lexeme [
-                group_(sl::_r1) [phx::at_c<0>(sl::_val) = sl::_1]
+                group_(sl::_r1, true) [phx::at_c<0>(sl::_val) = sl::_1]
             ] >
             qi::no_skip [
                 -group_child_specifier_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
             ] >
-            geo_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1]
+            geo_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1] >
+            qi::eps [(*sl::_r1)[ast::Root::Context::GROUP]]
         ) [(*sl::_1)[sl::_3]];
         zed::debug(group_definition_);
 
@@ -385,7 +381,7 @@ public:
         group_ =
             qi::lit('.') > (
                 group_id_ >> additional_class_(sl::_r1)
-            ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_1, sl::_2)]]
+            ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_r2, sl::_1, sl::_2)]]
         ;
         zed::debug(group_);
 
@@ -564,7 +560,12 @@ public:
         namespace_.name("namespace");
         namespace_ =
             qi::lit("namespace") >
-            ns_id_ [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Namespace>>(sl::_1)]]
+            ns_id_ [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Namespace>>(sl::_1)]] >
+
+            qi::lit('{') > qi::skip(ns::space) [qi::eps] >
+            (stmt_(sl::_r1) [phx::push_back(phx::at_c<1>(*sl::_val), sl::_1)] % stmt_break_) >
+            qi::lit('}') >
+            qi::eps [(*sl::_r1)[ast::Root::Context::NAMESPACE]]
         ;
         zed::debug(namespace_);
 
@@ -778,7 +779,7 @@ private:
 
     // -------------------------------------------------------
     // groups
-    rule<iterator_type, ast::Group*(ast::Root*)>
+    rule<iterator_type, ast::Group*(ast::Root*, bool)>
     group_;
 
     rule<iterator_type, ast::Endpoint*(ast::Root*)>

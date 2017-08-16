@@ -30,28 +30,28 @@ operator<<(std::ostream& os, NSID const& v)
 inline std::ostream&
 operator<<(std::ostream& os, VarID const& v)
 {
-    return os << debug::id_arg(*v.get());
+    return os << debug::id_arg("%" + *v.get());
 }
 inline std::ostream&
 operator<<(std::ostream& os, FuncID const& v)
 {
-    return os << debug::id_arg(*v.get());
+    return os << debug::id_arg("@" + *v.get());
 }
 inline std::ostream&
 operator<<(std::ostream& os, MacroID const& v)
 {
-    return os << debug::id_arg(*v.get());
+    return os << debug::id_arg("&" + *v.get());
 }
 
 inline std::ostream&
 operator<<(std::ostream& os, GroupID const& v)
 {
-    return os << debug::id_arg(*v.get());
+    return os << debug::id_arg(/*"." +*/ *v.get());
 }
 inline std::ostream&
 operator<<(std::ostream& os, EndpointID const& v)
 {
-    return os << debug::id_arg(*v.get());
+    return os << debug::id_arg(/*"#" +*/ *v.get());
 }
 
 }}} // saya

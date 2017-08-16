@@ -14,12 +14,19 @@ namespace saya { namespace ika { namespace ast {
 
 struct Group : ASTEntity
 {
+    static constexpr char const* GLOBAL_ID() noexcept { return "[global]"; }
+    static constexpr char const* SEP() noexcept { return ">"; }
+
     GroupID id;
     boost::optional<AdditionalClass*> additional_class;
     boost::optional<Attribute*> attr;
     boost::optional<Geo*> definition;
 
     Group() = default;
+
+    explicit Group(GroupID const& id)
+        : id(id)
+    {}
     explicit Group(GroupID const& id, boost::optional<AdditionalClass*> const& additional_class)
         : id(id)
         , additional_class(additional_class)
@@ -90,7 +97,7 @@ inline std::ostream& operator<<(std::ostream& os, Group const& v)
     return debug::with(
         os,
         "Group",
-        debug::kv("id", debug::id_arg(*v.id.get())),
+        debug::kv("id", v.id),
         debug::kv("additional_class", v.additional_class),
         debug::kv("attr", v.attr),
         debug::cond(
@@ -100,7 +107,7 @@ inline std::ostream& operator<<(std::ostream& os, Group const& v)
                 return os << "yes";
             },
             [] (auto& os) -> decltype(auto) {
-                 return os << "none";
+                 return os << saya::console::color::BOLD() << saya::console::color::fg::RED() << "NONE(delayed/inlined?)" << saya::console::color::RESET();
             }
         )
     );
@@ -120,7 +127,7 @@ inline std::ostream& operator<<(std::ostream& os, Endpoint const& v)
     return debug::with(
         os,
         "Endpoint",
-        debug::kv("id", debug::id_arg(*v.id.get())),
+        debug::kv("id", v.id),
         debug::kv("additional_class", v.additional_class),
         debug::kv("attr", v.attr)
     );

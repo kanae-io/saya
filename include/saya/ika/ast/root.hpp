@@ -42,6 +42,7 @@ public:
     enum class Context
     {
         NAMESPACE,
+        GROUP,
     };
 
     template<class T, class Enable>
@@ -49,12 +50,24 @@ public:
 
     Root()
     {
-        auto global_ns = std::make_unique<Namespace>(NSID{Namespace::GLOBAL_ID()});
-        detail::LookupQuery<Namespace> query{global_ns->id};
-        query.ctx_hash = boost::hash<NSID>()(global_ns->id);
+        {
+            auto v = std::make_unique<Namespace>(NSID{Namespace::GLOBAL_ID()});
+            global_ns_ = v.get();
+            detail::LookupQuery<Namespace> query{v->id};
+            query.ctx_hash = boost::hash<NSID>()(v->id);
 
-        namespaces_[query] = std::move(global_ns);
-        namespace_stack_.init(query.ctx_hash);
+            namespaces_[query] = std::move(v);
+            namespace_stack_.init(query.ctx_hash);
+        }
+        {
+            auto v = std::make_unique<Group>(GroupID{Group::GLOBAL_ID()});
+            global_group_ = v.get();
+            detail::LookupQuery<Group> query{v->id};
+            query.ctx_hash = boost::hash<GroupID>()(v->id);
+
+            groups_[query] = std::move(v);
+            group_stack_.init(query.ctx_hash);
+        }
     }
 
     Root(Root const&) = delete;
@@ -65,7 +78,15 @@ public:
     Root& operator=(Root const&) = delete;
     Root& operator=(Root&&) = delete;
 
+    // -------------------------------------------------------
+
+    Geo* layout{nullptr};
     std::vector<Stmt> stmt_list;
+
+    // -------------------------------------------------------
+
+    Namespace const* global_ns() const { return global_ns_; }
+    Group const* global_group() const { return global_group_; }
 
     // -------------------------------------------------------
 
@@ -75,6 +96,10 @@ public:
         switch (ctx) {
         case Context::NAMESPACE:
             namespace_stack_.pop();
+            break;
+
+        case Context::GROUP:
+            group_stack_.pop();
             break;
         }
     }
@@ -104,13 +129,13 @@ public:
     >
     T* operator[](detail::LookupQuery<T> query)
     {
-        namespace_stack_.make_fqns(query.qualifier);
+        namespace_stack_.make_fq(query.qualifier);
         query.ctx_hash = namespace_stack_.hash_query(query, true);
         auto& m = this->*(detail::proxy_dispatcher<T>::dispatch());
 
         if (!m.count(query)) {
             m[query] = std::make_unique<T>(
-                NSID{namespace_stack_.fqns() + Namespace::SEP() + flyweights::extractor{}(query.target)}
+                NSID{namespace_stack_.fq() + Namespace::SEP() + flyweights::extractor{}(query.target)}
             );
         }
         namespace_stack_.push(query);
@@ -128,7 +153,7 @@ public:
     >
     T* operator[](detail::LookupQuery<T> query)
     {
-        namespace_stack_.make_fqns(query.qualifier);
+        namespace_stack_.make_fq(query.qualifier);
         query.ctx_hash = namespace_stack_.hash_query(query, true);
         auto& m = this->*(detail::proxy_dispatcher<T>::dispatch());
 
@@ -144,7 +169,7 @@ public:
 
             m[query] = std::make_unique<T>(
                 decltype(query.target){
-                    namespace_stack_.fqns() + Namespace::SEP() + flyweights::extractor{}(query.target)
+                    namespace_stack_.fq() + Namespace::SEP() + flyweights::extractor{}(query.target)
                 }
             );
         }
@@ -154,28 +179,59 @@ public:
 
     template<
         class T,
-        typename std::enable_if_t<
-            std::is_same<Group, T>::value ||
-            std::is_same<Endpoint, T>::value,
-            int
-        > = 0
+        typename std::enable_if_t<std::is_same<Group, T>::value, int> = 0
     >
     T* operator[](detail::LookupQuery<T> query)
     {
-        // namespace_stack_.make_fqns(query.qualifier);
-        query.ctx_hash = namespace_stack_.hash_query(query, false);
+        group_stack_.make_fq(query.qualifier);
+        query.ctx_hash = group_stack_.hash_query(query);
         auto& m = this->*(detail::proxy_dispatcher<T>::dispatch());
 
         if (m.count(query)) {
-           // ...
+            #if !defined(NDEBUG)
+            ++prof_id_.hit;
+            #endif
 
         } else {
+            #if !defined(NDEBUG)
+            ++prof_id_.miss;
+            #endif
+
             m[query] = std::make_unique<T>(
                 decltype(query.target){
-                    boost::algorithm::join(
-                        query.qualifier | boost::adaptors::transformed(flyweights::extractor{}),
-                        "."
-                    ) + "." + flyweights::extractor{}(query.target)
+                    boost::algorithm::join(query.qualifier | boost::adaptors::transformed([] (auto const& q) { return "." + flyweights::extractor{}(q); }), Group::SEP())
+                    + Group::SEP() + "." + flyweights::extractor{}(query.target)
+                },
+                query.additional_class
+            );
+        }
+
+        if (query.dig) group_stack_.push(query);
+        return m.at(query).get();
+    }
+
+    template<
+        class T,
+        typename std::enable_if_t<std::is_same<Endpoint, T>::value, int> = 0
+    >
+    T* operator[](detail::LookupQuery<T> query)
+    {
+        query.ctx_hash = group_stack_.hash_query(query);
+        auto& m = this->*(detail::proxy_dispatcher<T>::dispatch());
+
+        if (m.count(query)) {
+            #if !defined(NDEBUG)
+            ++prof_id_.hit;
+            #endif
+
+        } else {
+            #if !defined(NDEBUG)
+            ++prof_id_.miss;
+            #endif
+
+            m[query] = std::make_unique<T>(
+                decltype(query.target){
+                    "#" + flyweights::extractor{}(query.target)
                 },
                 query.additional_class
             );
@@ -250,6 +306,9 @@ private:
     >;
     namespaces_type namespaces_;
 
+    Namespace const* global_ns_{nullptr};
+    Group const* global_group_{nullptr};
+
     class NamespaceStack
     {
     public:
@@ -257,20 +316,20 @@ private:
         {
             BOOST_ASSERT(this->empty());
             ctx_.push_front(global_ctx);
-            fqns_queue_.push_back(NSID{Namespace::GLOBAL_ID()});
+            fq_queue_.push_back(NSID{Namespace::GLOBAL_ID()});
         }
 
         void push(detail::LookupQuery<Namespace> const& query)
         {
             ctx_.push_front(query.ctx_hash);
-            fqns_queue_.push_back(query.target);
+            fq_queue_.push_back(query.target);
         }
 
         void pop()
         {
             BOOST_ASSERT(!this->empty());
             ctx_.pop_front();
-            fqns_queue_.pop_back();
+            fq_queue_.pop_back();
         }
 
         template<class T>
@@ -284,10 +343,10 @@ private:
             return seed;
         }
 
-        inline std::string fqns() const
+        inline std::string fq() const
         {
             return boost::algorithm::join(
-                fqns_queue_ | boost::adaptors::transformed(
+                fq_queue_ | boost::adaptors::transformed(
                     flyweights::extractor{}
                 ),
                 Namespace::SEP()
@@ -295,18 +354,88 @@ private:
         }
 
         inline void
-        make_fqns(std::deque<NSID>& child_qualifier) const
+        make_fq(std::deque<NSID>& child_qualifier) const
         {
-            std::copy(fqns_queue_.begin(), fqns_queue_.end(), std::front_inserter(child_qualifier));
+            std::copy(fq_queue_.begin(), fq_queue_.end(), std::back_inserter(child_qualifier));
         }
 
         inline bool empty() const noexcept { return ctx_.empty(); }
 
     private:
         std::deque<std::size_t> ctx_;
-        std::deque<NSID> fqns_queue_;
+        std::deque<NSID> fq_queue_;
     };
     NamespaceStack namespace_stack_;
+
+
+    class GroupStack
+    {
+    public:
+        void init(std::size_t global_ctx)
+        {
+            BOOST_ASSERT(this->empty());
+            ctx_.push_front(global_ctx);
+            fq_queue_.push_back(GroupID{Group::GLOBAL_ID()});
+        }
+
+        void push(detail::LookupQuery<Group> const& query)
+        {
+            ctx_.push_front(query.ctx_hash);
+            fq_queue_.push_back(query.target);
+        }
+
+        void pop()
+        {
+            BOOST_ASSERT(!this->empty());
+            ctx_.pop_front();
+            fq_queue_.pop_back();
+        }
+
+        template<class T, std::enable_if_t<!std::is_same<T, Endpoint>::value, int> = 0>
+        inline std::size_t hash_query(detail::LookupQuery<T> const& query) const
+        {
+            BOOST_ASSERT(!this->empty());
+
+            std::size_t seed = ctx_.front();
+            boost::hash_combine(seed, boost::hash_range(query.qualifier.begin(), query.qualifier.end()));
+            boost::hash_combine(seed, query.target);
+            return seed;
+        }
+
+        template<class T, std::enable_if_t<std::is_same<T, Endpoint>::value, int> = 0>
+        inline std::size_t hash_query(detail::LookupQuery<T> const& query) const
+        {
+            BOOST_ASSERT(!this->empty());
+
+            std::size_t seed = ctx_.front();
+            // boost::hash_combine(seed, boost::hash_range(query.qualifier.begin(), query.qualifier.end()));
+            boost::hash_combine(seed, query.target);
+            return seed;
+        }
+
+        inline std::string fq() const
+        {
+            return boost::algorithm::join(
+                fq_queue_ | boost::adaptors::transformed(
+                    [] (auto const& v) { return "." + flyweights::extractor{}(v); }
+                ),
+                Group::SEP()
+            );
+        }
+
+        inline void
+        make_fq(std::deque<GroupID>& child_qualifier) const
+        {
+            std::copy(fq_queue_.begin(), fq_queue_.end(), std::back_inserter(child_qualifier));
+        }
+
+        inline bool empty() const noexcept { return ctx_.empty(); }
+
+    private:
+        std::deque<std::size_t> ctx_;
+        std::deque<GroupID> fq_queue_;
+    };
+    GroupStack group_stack_;
 
     // ------------------------------------------------------
 

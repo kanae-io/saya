@@ -26,7 +26,7 @@ inline std::ostream& operator<<(std::ostream& os, Var const& v)
     return debug::with(
         os,
         "Var",
-        debug::kv("id", debug::id_arg(*v.id.get()))
+        debug::kv("id", v.id)
     );
 }
 

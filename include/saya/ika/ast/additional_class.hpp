@@ -23,10 +23,14 @@ struct AdditionalClass
 
 inline std::ostream& operator<<(std::ostream& os, AdditionalClass const& v)
 {
+    if (v.classes.empty()) {
+        return debug::fixed_empty(os, "AdditionalClass");
+    }
+
     return debug::with(
         os,
         "AdditionalClass",
-        debug::kv("classes", v.classes | boost::adaptors::transformed([] (auto const& c) { return "." + c; }))
+        debug::kv("classes", v.classes | boost::adaptors::transformed([] (auto const& c) { return debug::id_arg("." + c); }))
     );
 }
 

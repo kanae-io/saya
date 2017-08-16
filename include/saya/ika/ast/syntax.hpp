@@ -37,7 +37,7 @@ inline std::ostream& operator<<(std::ostream& os, Argument const& v)
     return debug::with(
         os,
         "Arg",
-        debug::kv("id", *v.var->id.get()),
+        debug::kv("id", v.var->id),
         debug::cond(static_cast<bool>(v.maybe_default), [] (auto& os) -> decltype(auto) { return os << "defaulted"; }, [] (auto& os) -> decltype(auto) { return os; })
     );
 }

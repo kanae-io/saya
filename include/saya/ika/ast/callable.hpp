@@ -55,7 +55,7 @@ inline std::ostream& operator<<(std::ostream& os, Func const& v)
     return debug::with(
         os,
         "Func",
-        debug::kv("id", debug::id_arg(*v.id.get())),
+        debug::kv("id", v.id),
         debug::kv("def", v.definition)
     );
 }
@@ -74,7 +74,7 @@ inline std::ostream& operator<<(std::ostream& os, Macro const& v)
     return debug::with(
         os,
         "Macro",
-        debug::kv("id", debug::id_arg(*v.id.get())),
+        debug::kv("id", v.id),
         debug::kv("def", v.definition)
     );
 }

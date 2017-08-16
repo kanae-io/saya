@@ -24,6 +24,16 @@ struct boost::spirit::traits::print_attribute_debug<Out, std::unique_ptr<T>>
     }
 };
 
+template<class Out>
+struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::lit::String*>
+{
+    static void call(Out& out, saya::ika::ast::lit::String const* val)
+    {
+        BOOST_ASSERT(val);
+        boost::spirit::traits::print_attribute(out, *val);
+    }
+};
+
 #if 0
 
 template<class Out>

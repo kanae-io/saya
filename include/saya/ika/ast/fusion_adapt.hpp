@@ -38,6 +38,7 @@ BOOST_PP_EXPAND(BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP), SAYA
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Namespace,
     (saya::ika::ast::NSID, id)
+    (std::vector<saya::ika::ast::Stmt>, stmt_list)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(

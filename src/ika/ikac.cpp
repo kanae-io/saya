@@ -99,7 +99,13 @@ public:
             l_.info() << "compiled." << std::endl;
 
             l_.info() << "evaluating..." << std::endl;
-            evaluator.eval(*root);
+
+            try {
+                evaluator.eval(*root);
+            } catch (saya::ika::eval_error const& e) {
+                l_.error() << e.what() << std::endl;
+                return EXIT_FAILURE;
+            }
 
         } catch (saya::io_error const& e) {
             l_.error() << e.what() << std::endl;

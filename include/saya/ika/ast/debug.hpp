@@ -68,6 +68,18 @@ std::ostream& operator<<(std::ostream& os, literal_wrapper<T> const& v)
 }
 
 template<class T>
+struct subtype_wrapper
+{
+    T const& v;
+};
+
+template<class T>
+std::ostream& operator<<(std::ostream& os, subtype_wrapper<T> const& v)
+{
+    return os << saya::console::color::UNDERLINED() << saya::console::color::fg::YELLOW() << v.v << reset;
+}
+
+template<class T>
 struct id_wrapper
 {
     T const& v;
@@ -93,17 +105,31 @@ std::ostream& operator<<(std::ostream& os, id_arg_wrapper<T> const& v)
 
 
 template<class K, class V, class F = void, class Enabled = void>
-struct term
+struct term;
+
+template<class K, class V, class F>
+struct term<K, V, F>
 {
     K k;
     V const& v;
 };
 
-template<class K, class V>
-struct term<K, V*>
+// template<class K, class V, class F>
+// struct term<K, V&&, F>
+// {
+//     K k;
+//     V const v;
+// };
+
+template<class K, class V, class F>
+struct term<K, V const*, F>
 {
     K k;
     V const* v;
+
+    explicit term(K const& k, V const* v)
+        : k(k), v(v)
+    {}
 };
 
 template<class K, class V>
@@ -121,12 +147,6 @@ template<class T>
 static constexpr bool
 is_range_v<T*> = false;
 
-template<class K, class Range>
-struct term<K, Range, void, std::enable_if_t<is_range_v<Range>>>
-{
-    K k;
-    Range const& r;
-};
 
 template<class K, class F>
 struct term<K, void, F>
@@ -163,6 +183,13 @@ make_term(F&& f)
     return {std::forward<F>(f)};
 }
 
+template<class T>
+T const& deref_once(T const& v) { return v; }
+
+template<class T>
+T const& deref_once(T* v) { return *v; }
+
+
 template<class K, class V, std::enable_if_t<!is_range_v<V>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, term<K, V> const& kv_)
 {
@@ -174,12 +201,12 @@ inline std::ostream& operator<<(std::ostream& os, term<K, V> const& kv_)
 }
 
 template<class K, class V>
-inline std::ostream& operator<<(std::ostream& os, term<K, V*> const& kv_)
+inline std::ostream& operator<<(std::ostream& os, term<K, V const*> const& kv_)
 {
     os << saya::console::color::fg::MAGENTA() << kv_.k << reset << ": ";
 
     if (!kv_.v) {
-        return os << saya::console::color::BOLD() << saya::console::color::fg::DARKGRAY() << "(none)" << reset;
+        return os << saya::console::color::BOLD() << saya::console::color::fg::RED() << "INVALID" << reset;
     } else {
         return os << *kv_.v;
     }
@@ -193,20 +220,20 @@ inline std::ostream& operator<<(std::ostream& os, term<K, boost::optional<V>> co
     if (!kv_.v) {
         return os << saya::console::color::BOLD() << saya::console::color::fg::DARKGRAY() << "(none)" << reset;
     } else {
-        return os << *kv_.v;
+        return os << deref_once(*kv_.v);
     }
 }
 
 template<class K, class Range, std::enable_if_t<is_range_v<Range>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, term<K, Range, void> const& t)
 {
-    if (t.r.empty()) return os;
+    if (t.v.empty()) return os;
 
     os << "[";
     auto oj = std::experimental::make_ostream_joiner(os, ", ");
     auto kvp = detail::make_kv_printer(oj);
 
-    for (auto const& e : t.r) {
+    for (auto const& e : t.v) {
         kvp(e);
     }
 
@@ -241,6 +268,13 @@ literal(T const& v)
 // ----------------------------------------------------
 
 template<class T>
+inline detail::subtype_wrapper<std::decay_t<T const>>
+subtype(T const& v)
+{
+    return {v};
+}
+
+template<class T>
 inline detail::id_wrapper<std::decay_t<T const>>
 id(T const& v)
 {
@@ -271,7 +305,7 @@ kv(K const& k, V const& v)
 template<class K, class V>
 inline detail::term<
     std::decay_t<K const>,
-    V*
+    V const*
 >
 kv(K const& k, V const* v)
 {
@@ -298,6 +332,13 @@ fixed_none(std::ostream& os, K const& t)
 
 template<class K>
 inline std::ostream&
+fixed_empty(std::ostream& os, K const& t)
+{
+    return fixed(os, t, "empty");
+}
+
+template<class K>
+inline std::ostream&
 fixed_omitted(std::ostream& os, K const& t)
 {
     return fixed(os, t, "omitted");
@@ -305,16 +346,16 @@ fixed_omitted(std::ostream& os, K const& t)
 
 template<class K, class L>
 inline std::ostream&
-fixed_id(std::ostream& os, K const& id_, L const& arg_)
+fixed_id(std::ostream& os, K const& id_, L const& stype_)
 {
-    return os << id(id_) << "(" << id_arg(arg_) << ")";
+    return os << id<std::decay_t<K const>>(id_) << "(" << subtype<std::decay_t<L const>>(stype_) << ")";
 }
 
 template<class K>
 inline std::ostream&
 fixed_id(std::ostream& os, K const& id_)
 {
-    return os << id(id_);
+    return os << id<std::decay_t<K const>>(id_);
 }
 
 
