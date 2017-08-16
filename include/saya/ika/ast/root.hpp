@@ -198,10 +198,8 @@ public:
             #endif
 
             m[query] = std::make_unique<T>(
-                decltype(query.target){
-                    boost::algorithm::join(query.qualifier | boost::adaptors::transformed([] (auto const& q) { return "." + flyweights::extractor{}(q); }), Group::SEP())
-                    + Group::SEP() + "." + flyweights::extractor{}(query.target)
-                },
+                query.qualifier, // deep copy
+                query.target,
                 query.additional_class
             );
         }

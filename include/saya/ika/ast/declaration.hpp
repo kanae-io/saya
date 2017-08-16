@@ -15,7 +15,6 @@ struct Declaration : ASTEntity
     using groupable_type = boost::variant<Group*, Endpoint*>;
 
     groupable_type groupable;
-    boost::optional<AdditionalClass*> additional_class;
     boost::optional<Attribute*> attr;
 
     bool is_inline{true}; // IMPORTANT: this must be true by default
@@ -27,7 +26,6 @@ inline std::ostream& operator<<(std::ostream& os, Declaration const& v)
         os,
         "Decl",
         debug::kv("groupable", v.groupable),
-        debug::kv("additional_class", v.additional_class),
         debug::kv("attr", v.attr),
         debug::cond(v.is_inline, [] (auto& os) -> decltype(auto) { return os << "inline"; }, [] (auto& os) -> decltype(auto) { return os; })
     );

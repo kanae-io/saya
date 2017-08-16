@@ -47,18 +47,18 @@ inline std::ostream& operator<<(std::ostream& os, MacroDefinition const& v)
 
 struct GroupChildSpecifier : ASTEntity
 {
-    GroupID child_id;
-    boost::optional<AdditionalClass*> additional_class;
+    Group* child{nullptr};
     boost::optional<Attribute*> attr;
 };
 
 inline std::ostream& operator<<(std::ostream& os, GroupChildSpecifier const& v)
 {
+    BOOST_ASSERT(v.child);
+
     return debug::with(
         os,
         "ChildSpecifier",
-        debug::kv("child_id", debug::id_arg("." + *v.child_id.get())),
-        debug::kv("additional_class", v.additional_class),
+        debug::kv("child", *v.child),
         debug::kv("attr", v.attr)
     );
 }
@@ -77,7 +77,7 @@ inline std::ostream& operator<<(std::ostream& os, GroupDefinition const& v)
     return debug::with(
         os,
         "GroupDef",
-        debug::kv("id", v.group->id),
+        debug::kv("id", debug::id_arg(v.group->pretty_id())),
         debug::kv("c", v.child_specifier)
     );
 }

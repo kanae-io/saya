@@ -13,7 +13,7 @@ namespace saya { namespace ika { namespace ast {
 
 struct DefaultSpecifier : ASTEntity
 {
-    Geo* geo{nullptr};
+    Geo* definition{nullptr};
 };
 
 inline std::ostream& operator<<(std::ostream& os, DefaultSpecifier const&)

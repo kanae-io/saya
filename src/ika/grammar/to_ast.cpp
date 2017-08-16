@@ -203,14 +203,13 @@ public:
         declaration_.name("declaration");
         declaration_ =
             qi::lexeme [
-                qi::omit [-qi::lit('!') [phx::at_c<3>(sl::_val) = false]] >>
+                qi::omit [-qi::lit('!') [phx::at_c<2>(sl::_val) = false]] >>
                 (
                     group_(sl::_r1, false) |
                     endpoint_(sl::_r1)
-                ) [phx::at_c<0>(sl::_val) = sl::_1] >>
-                additional_class_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
+                ) [phx::at_c<0>(sl::_val) = sl::_1]
             ] >
-            -attribute_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1]
+            -attribute_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
         ;
         zed::debug(declaration_);
 
@@ -233,12 +232,10 @@ public:
             qi::lit('[') >
             qi::skip(ns::space) [qi::eps] >
             qi::no_skip [
-                qi::lit('.') >
-                group_id_ [phx::at_c<0>(sl::_val) = sl::_1] >
-                additional_class_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
+                group_(sl::_r1, false) [phx::at_c<0>(sl::_val) = sl::_1]
             ] >
             qi::skip(ns::blank) [
-                -attribute_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1]
+                -attribute_(sl::_r1) [phx::at_c<1>(sl::_val) = sl::_1]
             ] >
             qi::skip(ns::space) [qi::eps] >
             qi::lit(']')
@@ -255,7 +252,7 @@ public:
             ] >
             geo_(sl::_r1) [phx::at_c<2>(sl::_val) = sl::_1] >
             qi::eps [(*sl::_r1)[ast::Root::Context::GROUP]]
-        ) [(*sl::_1)[sl::_3]];
+        ); // [(*sl::_1)[sl::_3]];
         zed::debug(group_definition_);
 
         additional_class_.name("additional-class");
@@ -311,7 +308,7 @@ public:
         uop_macro_call_.name("uop-macro-call");
         uop_macro_call_ =
             qi::lexeme [macro_(sl::_r1)] >
-            qi::no_skip [additional_class_(sl::_r1)] >
+            qi::no_skip [-additional_class_(sl::_r1)] >
             qi::skip(ns::blank) [-call_param_(sl::_r1)] >
             qi::skip(ns::blank) [-geo_(sl::_r1)]
         ;
@@ -380,7 +377,7 @@ public:
         group_.name("group");
         group_ =
             qi::lit('.') > (
-                group_id_ >> additional_class_(sl::_r1)
+                group_id_ >> -additional_class_(sl::_r1)
             ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Group>>(sl::_r2, sl::_1, sl::_2)]]
         ;
         zed::debug(group_);
@@ -388,7 +385,7 @@ public:
         endpoint_.name("endpoint");
         endpoint_ =
             qi::lit('#') > (
-                endpoint_id_ >> additional_class_(sl::_r1)
+                endpoint_id_ >> -additional_class_(sl::_r1)
             ) [sl::_val = (*sl::_r1)[phx::construct<ast::detail::LookupQuery<ast::Endpoint>>(sl::_1, sl::_2)]]
         ;
         zed::debug(endpoint_);

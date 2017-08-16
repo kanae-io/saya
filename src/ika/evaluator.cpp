@@ -79,12 +79,18 @@ struct context
         , l(l)
     {
         BOOST_ASSERT(l);
-        ns_stack_.push_front(root.global_ns());
+        default_stack_.push_front(nullptr);
     }
 
-    void push(ast::Namespace const* v) { BOOST_ASSERT(v); ns_stack_.push_front(v); }
-    void pop_ns() { ns_stack_.pop_front(); }
-    bool in_global_ns() const noexcept { return ns_stack_.size() == 1; }
+    void set(ast::Geo* v) { default_stack_.front() = v; }
+    void push_default() { default_stack_.push_front(nullptr); }
+    void pop_default() { default_stack_.pop_front(); }
+
+    ast::Geo* defaulter() const
+    {
+        BOOST_ASSERT(!default_stack_.empty());
+        return default_stack_.front();
+    }
 
     context(context const&) = delete;
     context(context&&) = default;
@@ -95,8 +101,10 @@ struct context
     ast::Root& root;
     saya::logger* const l;
 
+    unsigned stmt_depth{0u};
+
 private:
-    std::deque<ast::Namespace const*> ns_stack_;
+    std::deque<ast::Geo*> default_stack_;
 };
 
 struct v_ast : boost::static_visitor<void>
@@ -133,6 +141,7 @@ struct v_ast : boost::static_visitor<void>
 
     void operator()(ast::BOp<ast::ops::Assign>& e) const;
 
+    void operator()(ast::Block*& ep) const;
     void operator()(ast::Geo*& ep) const;
 
     void operator()(ast::Namespace*&) const;
@@ -158,7 +167,24 @@ private:
 };
 
 
+// --------------------------------------------------
+
+
+inline std::ostream& indent(std::ostream& os)
+{
+    return os << "  ";
+}
+
 namespace colored {
+
+struct id
+{
+    std::string msg;
+};
+inline std::ostream& operator<<(std::ostream& os, id const& v)
+{
+    return os << console::color::UNDERLINED() << console::color::fg::GREEN() << v.msg << console::color::RESET();
+}
 
 struct yellow
 {
@@ -218,7 +244,10 @@ SAYA_IKA_V_IMPL(Root, {
 // ------------------------------------------------
 
 SAYA_IKA_V_IMPL(Stmt, {
+    eval_assert(++ctx_.stmt_depth <= 1000u, "statement depth exceeded (1000+)");
+
     boost::apply_visitor(v_ast{ctx_}, e.st);
+    --ctx_.stmt_depth;
 })
 
 SAYA_IKA_V_IMPL(Expr, {
@@ -263,52 +292,73 @@ private:
 template<>
 struct v_groupable<std::nullptr_t> : boost::static_visitor<void>
 {
+    explicit v_groupable(ast::Geo* def)
+        : def_(def)
+    {}
+
     void operator()(ast::Group* v) const
     {
         BOOST_ASSERT(v);
         eval_assert(!v->definition, "redefinition of already defined definition");
-        v->definition = nullptr;
+        v->definition = def_;
     }
 
     void operator()(ast::Endpoint*) const { /* no definition for Endpoint */ }
+
+private:
+    ast::Geo* const def_;
 };
 
 
 SAYA_IKA_V_IMPL(Declaration, {
     if (!e.is_inline) {
-        ctx_.l->info() << colored::gray{"skipped (not inlined)"} << std::endl;
+        ctx_.l->info() << indent << colored::gray{"skipped (not inlined)"} << std::endl;
         return;
     }
 
-    ctx_.l->info() << colored::yellow{"inline declaration"} << std::endl;
+    ctx_.l->info() << indent << colored::yellow{"(inline declaration)"} << std::endl;
 
-    {
-        ctx_.l->info() << colored::action{"assigning empty definition..."} << std::endl;
-        auto const visitor = v_groupable<std::nullptr_t>{};
+    if (ctx_.defaulter()) {
+        ctx_.l->info() << indent << colored::action{"assigning defaulted definition..."} << std::endl;
+        auto const visitor = v_groupable<std::nullptr_t>{ctx_.defaulter()};
+        boost::apply_visitor(visitor, e.groupable);
+
+    } else {
+        ctx_.l->info() << indent << colored::action{"assigning empty definition..."} << std::endl;
+        auto const visitor = v_groupable<std::nullptr_t>{nullptr};
         boost::apply_visitor(visitor, e.groupable);
     }
 
-    if (!e.attr && !e.additional_class) {
-        ctx_.l->info() << colored::gray{"skipped (no viable definition for inline declaration)"} << std::endl;
+    if (!e.attr) {
+        ctx_.l->info() << indent << colored::gray{"skipped (no viable definition for inline declaration)"} << std::endl;
         return;
     }
 
     if (e.attr) {
-        ctx_.l->info() << colored::action{"assigning attribute..."} << std::endl;
+        ctx_.l->info() << indent << colored::action{"assigning attribute..."} << std::endl;
 
         auto const visitor = v_groupable<ast::Attribute>{*e.attr};
-        boost::apply_visitor(visitor, e.groupable);
-    }
-
-    if (e.additional_class) {
-        ctx_.l->info() << colored::action{"assigning additional classes..."} << std::endl;
-
-        auto const visitor = v_groupable<ast::AdditionalClass>{*e.additional_class};
         boost::apply_visitor(visitor, e.groupable);
     }
 })
 
 SAYA_IKA_V_IMPL(GroupDefinition, {
+    BOOST_ASSERT(e.group);
+    BOOST_ASSERT(e.geo);
+    auto* g = e.group;
+
+    if (e.child_specifier) g = e.child_specifier->child;
+
+    ctx_.l->info() << indent << colored::yellow{"Group"} << " " << colored::id{g->pretty_id()} << std::endl;
+
+    {
+        ctx_.l->info() << indent << colored::action{"evaluating definition..."} << std::endl;
+        auto w = wrap(e.geo);
+        boost::apply_visitor(v_ast{ctx_}, w);
+    }
+
+    ctx_.l->info() << indent << colored::action{"assigning definition..."} << std::endl;
+    (*g)[e.geo];
 })
 
 SAYA_IKA_V_IMPL(FuncDefinition, {
@@ -318,6 +368,7 @@ SAYA_IKA_V_IMPL(MacroDefinition, {
 })
 
 SAYA_IKA_V_IMPL(DefaultSpecifier, {
+    ctx_.set(e.definition);
 })
 
 SAYA_IKA_V_IMPL_PTR(kw::Inherit const, {
@@ -350,23 +401,38 @@ SAYA_IKA_V_IMPL(BOp<ast::ops::Assign>, {
 })
 
 // ------------------------------------------------
+SAYA_IKA_V_IMPL_PTR(Block, {
+    for (auto& stmt : e.stmt_list) {
+        auto w = wrap(stmt);
+        boost::apply_visitor(v_ast{ctx_}, w);
+    }
+})
 
 SAYA_IKA_V_IMPL_PTR(Geo, {
-    if (ctx_.in_global_ns()) {
-        ctx_.l->info() << colored::yellow{"global layout definition"} << std::endl;
+    ctx_.push_default();
+
+    if (ctx_.stmt_depth == 1) {
+        ctx_.l->info() << indent << colored::yellow{"(global layout definition)"} << std::endl;
         ctx_.root.layout = ep;
     }
+
+    if (e.block) {
+        ctx_.l->info() << indent << colored::action{"evaluating block..."} << std::endl;
+
+        auto w = wrap(*e.block);
+        boost::apply_visitor(v_ast{ctx_}, w);
+    }
+
+    ctx_.pop_default();
 })
 
 // ------------------------------------------------
 
 SAYA_IKA_V_IMPL_PTR(Namespace, {
-    ctx_.push(ep);
     for (auto& stmt : e.stmt_list) {
         auto w = wrap(stmt);
         boost::apply_visitor(v_ast{ctx_}, w);
     }
-    ctx_.pop_ns();
 })
 
 SAYA_IKA_V_IMPL_PTR(Var, {

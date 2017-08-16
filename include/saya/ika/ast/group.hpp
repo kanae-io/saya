@@ -4,11 +4,14 @@
 #include "saya/ika/ast_fwd.hpp"
 #include "saya/ika/ast/ast_entity.hpp"
 
+#include <boost/range/adaptor/transformed.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 #include <boost/variant/variant.hpp>
 #include <boost/optional.hpp>
 
 #include <iosfwd>
-
+#include <deque>
 
 namespace saya { namespace ika { namespace ast {
 
@@ -17,6 +20,7 @@ struct Group : ASTEntity
     static constexpr char const* GLOBAL_ID() noexcept { return "[global]"; }
     static constexpr char const* SEP() noexcept { return ">"; }
 
+    std::deque<GroupID> qualifier;
     GroupID id;
     boost::optional<AdditionalClass*> additional_class;
     boost::optional<Attribute*> attr;
@@ -27,13 +31,23 @@ struct Group : ASTEntity
     explicit Group(GroupID const& id)
         : id(id)
     {}
-    explicit Group(GroupID const& id, boost::optional<AdditionalClass*> const& additional_class)
-        : id(id)
+    explicit Group(std::deque<GroupID> const& qualifier, GroupID const& id, boost::optional<AdditionalClass*> const& additional_class)
+        : qualifier(qualifier)
+        , id(id)
         , additional_class(additional_class)
     {}
-    explicit Group(GroupID const& id, boost::optional<AdditionalClass*> const& additional_class, boost::optional<Attribute*> const& attr)
-        : id(id), additional_class(additional_class), attr(attr)
-    {}
+
+    inline std::string pretty_id() const
+    {
+        if (qualifier.empty()) {
+            return std::string(saya::console::color::BOLD()) + saya::console::color::fg::RED() + "AMBIGUOUS" + "." + flyweights::extractor{}(id) + saya::console::color::RESET();
+        }
+
+        return
+            boost::algorithm::join(qualifier | boost::adaptors::transformed([] (auto const& v) { return "." + flyweights::extractor{}(v); }), SEP()) +
+            SEP() + "." + flyweights::extractor{}(id)
+        ;
+    }
 
     void operator[](AdditionalClass* v)
     {
@@ -97,7 +111,7 @@ inline std::ostream& operator<<(std::ostream& os, Group const& v)
     return debug::with(
         os,
         "Group",
-        debug::kv("id", v.id),
+        debug::kv("id", debug::id_arg(v.pretty_id())),
         debug::kv("additional_class", v.additional_class),
         debug::kv("attr", v.attr),
         debug::cond(

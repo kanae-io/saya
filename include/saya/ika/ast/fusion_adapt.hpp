@@ -108,7 +108,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Declaration,
     (typename saya::ika::ast::Declaration::groupable_type, groupable)
-    (boost::optional<saya::ika::ast::AdditionalClass*>, additional_class)
     (boost::optional<saya::ika::ast::Attribute*>, attr)
     (bool, is_inline)
 )
@@ -127,8 +126,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::GroupChildSpecifier,
-    (saya::ika::ast::GroupID, child_id)
-    (boost::optional<saya::ika::ast::AdditionalClass*>, additional_class)
+    (saya::ika::ast::Group*, child)
     (boost::optional<saya::ika::ast::Attribute*>, attr)
 )
 
@@ -156,7 +154,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::DefaultSpecifier,
-    (saya::ika::ast::Geo*, geo)
+    (saya::ika::ast::Geo*, definition)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(

@@ -74,7 +74,7 @@ protected:
             }
         }
 
-        boost::algorithm::trim(frag);
+        boost::algorithm::trim_right(frag);
         frag += '\n';
 
         // 'note: '
