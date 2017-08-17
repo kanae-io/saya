@@ -11,7 +11,10 @@ Testing/
 
 /install/
 /build/
+/build-debug/
+/build_debug/
 /build-release/
+/build_release/
 
 /lib/
 /bin/

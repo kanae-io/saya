@@ -164,6 +164,8 @@ struct v_ast : boost::static_visitor<void>
 
     #include "saya/ika/vm/internal_undef.hpp"
 
+    void operator()(ast::lit::Map*& ep) const;
+
 private:
     context& ctx_;
 };
@@ -346,7 +348,7 @@ SAYA_IKA_V_IMPL(GroupDefinition, {
 
     if (e.child_specifier) g = e.child_specifier->child;
 
-    ctx_.l.info() << indent << colored::yellow{"Group"} << " " << colored::id{g->pretty_id()} << std::endl;
+    ctx_.l.info() << indent << colored::yellow{"Group"} << " " << colored::id{flyweights::extractor{}(g->id)} << std::endl;
 
     {
         ctx_.l.info() << indent << colored::action{"evaluating definition..."} << std::endl;
@@ -469,6 +471,10 @@ SAYA_IKA_V_IMPL(lit::Px, {
 })
 
 SAYA_IKA_V_IMPL(lit::Pct, {
+
+})
+
+SAYA_IKA_V_IMPL_PTR(lit::Map, {
 
 })
 

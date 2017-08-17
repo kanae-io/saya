@@ -1,11 +1,11 @@
 #include "saya/ika/compiler/bridge.hpp"
 #include "saya/ika/compiler.hpp"
-#include "saya/ika/evaluator.hpp"
 
-#include "saya/ika/ast/all.hpp"
+#include "saya/ika/vm/type.hpp"
+#include "saya/ika/ast/id.hpp"
 
 #include "saya/logger.hpp"
-#include "saya/filesystem.hpp"
+#include "saya/error.hpp"
 
 #include "saya/stream_lock.hpp"
 
@@ -80,24 +80,18 @@ public:
             brg.ikastd(),
         }};
 
-        saya::ika::evaluator
-        evaluator{
-            l_.env()
-        };
+        compiler.compile_ikastd();
 
         // for each input files
         for (auto const& path : brg.input_files()) try {
             auto const bundle = saya::ika::make_source(path);
             compiler.compile(bundle);
 
-            // try {
-            //     evaluator.eval(*root);
-            // } catch (saya::ika::eval_error const& e) {
-            //     l_.error() << e.what() << std::endl;
-            //     return EXIT_FAILURE;
-            // }
-
         } catch (saya::io_error const& e) {
+            l_.error() << e.what() << std::endl;
+            return EXIT_FAILURE;
+
+        } catch (saya::ika::eval_error const& e) {
             l_.error() << e.what() << std::endl;
             return EXIT_FAILURE;
 

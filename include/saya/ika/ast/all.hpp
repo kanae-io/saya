@@ -19,8 +19,8 @@
 
 #include "saya/ika/ast/var.hpp"
 
-#include "saya/ika/ast/expr.hpp"
 #include "saya/ika/ast/meta_lit.hpp"
+#include "saya/ika/ast/expr.hpp"
 #include "saya/ika/ast/op.hpp"
 #include "saya/ika/ast/syntax.hpp"
 

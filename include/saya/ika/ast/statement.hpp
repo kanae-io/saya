@@ -31,15 +31,6 @@ struct Stmt : ASTEntity
     st_content_type st;
 };
 
-inline std::ostream& operator<<(std::ostream& os, Stmt const& v)
-{
-    return debug::with(
-        os,
-        "Stmt",
-        debug::kv("st", v.st)
-    );
-}
-
 }}} // saya
 
 #endif

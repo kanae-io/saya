@@ -36,7 +36,10 @@ class Root //: ASTEntity
     static constexpr bool is_block_v = std::is_same<Geo, T>::value || std::is_same<Block, T>::value;
 
     template<class T>
-    static constexpr bool is_literal_v = std::is_base_of<LiteralEntity, T>::value;
+    static constexpr bool is_meta_lit_v = std::is_same<lit::Map, T>::value;
+
+    template<class T>
+    static constexpr bool is_literal_v = !is_meta_lit_v<T> && std::is_base_of<LiteralEntity, T>::value;
 
 public:
     enum class Context
@@ -109,7 +112,7 @@ public:
     template<
         class T,
         typename std::enable_if_t<
-            std::is_same<Attribute, T>::value || std::is_same<AdditionalClass, T>::value || is_block_v<T>,
+            is_meta_lit_v<T> || std::is_same<Attribute, T>::value || std::is_same<AdditionalClass, T>::value || is_block_v<T>,
             int
         > = 0
     >
@@ -281,6 +284,9 @@ private:
         lit::deep_hash<LiteralEntity>
     >;
     literals_type literals_;
+
+    using maps_type = std::vector<std::unique_ptr<lit::Map>>;
+    maps_type maps_;
 
     // ------------------------------------------------------
 
@@ -481,6 +487,16 @@ private:
 };
 
 namespace detail {
+
+template<>
+struct proxy_dispatcher<lit::Map>
+{
+    static auto dispatch() noexcept
+        -> decltype(&Root::maps_)
+    {
+        return &Root::maps_;
+    }
+};
 
 template<>
 struct proxy_dispatcher<Namespace>

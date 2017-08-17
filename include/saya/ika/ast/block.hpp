@@ -15,26 +15,6 @@ struct BlockParam : ASTEntity
     std::vector<Argument> args;
 };
 
-inline std::ostream& operator<<(std::ostream& os, BlockParam const& v)
-{
-    BOOST_ASSERT(!v.args.empty());
-
-    return debug::with(
-        os,
-        "Param",
-        debug::kv("args", v.args)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, boost::optional<BlockParam> const& v)
-{
-    return debug::proxy(
-        os,
-        "Param",
-        v
-    );
-}
-
 struct Block : ASTEntity
 {
     boost::optional<BlockParam> param;
@@ -45,43 +25,6 @@ struct Block : ASTEntity
         : param(param), stmt_list(stmt_list)
     {}
 };
-
-inline std::ostream& operator<<(std::ostream& os, Block const& v)
-{
-    return debug::with(
-        os,
-        "Block",
-        debug::kv("param", v.param),
-        debug::kv("sloc", v.stmt_list.size())
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, boost::optional<Block*> const& v)
-{
-    return debug::proxy(
-        os,
-        "Block",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, boost::optional<Block> const& v)
-{
-    return debug::proxy(
-        os,
-        "Block",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Block const* v)
-{
-    return debug::proxy(
-        os,
-        "Block",
-        v
-    );
-}
 
 }}} // saya
 

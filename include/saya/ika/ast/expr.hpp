@@ -44,6 +44,8 @@ struct PrimaryExpr : ASTEntity
 
         #include "saya/ika/vm/internal_undef.hpp"
 
+        boost::recursive_wrapper<lit::Map*>,
+
         boost::recursive_wrapper<Expr>
     >;
 
@@ -68,11 +70,6 @@ struct Expr : ASTEntity
     expr_type expr;
 };
 
-inline std::ostream& operator<<(std::ostream& os, Expr const&)
-{
-    return debug::fixed_omitted(os, "Expr");
-}
-
 struct SideEffectExpr : ASTEntity
 {
     using expr_type = boost::variant<
@@ -82,11 +79,6 @@ struct SideEffectExpr : ASTEntity
 
     expr_type expr;
 };
-
-inline std::ostream& operator<<(std::ostream& os, SideEffectExpr const&)
-{
-    return debug::fixed_omitted(os, "Expr");
-}
 
 }}} // saya
 

@@ -1,9 +1,8 @@
 #ifndef SAYA_IKA_COMPILER_HPP
 #define SAYA_IKA_COMPILER_HPP
 
+#include "saya/ika/error.hpp"
 #include "saya/ika/compiler/source.hpp"
-
-#include "saya/ika/ast_fwd.hpp"
 
 #include "saya/logger/logger_env.hpp"
 
@@ -13,17 +12,8 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
-#include <stdexcept>
-
 
 namespace saya { namespace ika {
-
-struct compile_error : std::invalid_argument
-{
-    compile_error(std::string const& reason)
-        : std::invalid_argument(reason)
-    {}
-};
 
 struct compiler_options
 {
@@ -33,7 +23,6 @@ struct compiler_options
 class compiler : detail::source_id_access
 {
 public:
-    using ast_type = ast::Root;
     using mutex_type = std::mutex;
     using lock_type = std::lock_guard<mutex_type>;
     using unique_lock_type = std::unique_lock<mutex_type>;
@@ -42,7 +31,7 @@ public:
     compiler(compiler const&) = delete;
     compiler(compiler&&) = delete;
 
-    ~compiler() = default;
+    ~compiler();
 
     compiler& operator=(compiler const&) = delete;
     compiler& operator=(compiler&&) = delete;
@@ -53,7 +42,7 @@ public:
     void compile(source_bundle const& bundle) const;
 
 private:
-    void compile_impl(source_bundle const& bundle) const;
+    void compile_impl(source_bundle const& bundle, char const* prompt) const;
     void make_world() const;
 
     saya::logger_env const l_env_;
@@ -66,8 +55,8 @@ private:
     mutable std::unordered_set<source_id>
     wip_sources_;
 
-    mutable std::unordered_map<source_id, std::unique_ptr<ast_type>>
-    std_sources_, sources_;
+    class Impl;
+    mutable std::unique_ptr<Impl> impl_;
 };
 
 }} // saya

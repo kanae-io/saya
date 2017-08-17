@@ -49,54 +49,6 @@ struct CallParam : ASTEntity
     std::vector<Expr> expr_list;
 };
 
-
-inline std::ostream& operator<<(std::ostream& os, Func const& v)
-{
-    return debug::with(
-        os,
-        "Func",
-        debug::kv("id", v.id),
-        debug::kv("def", v.definition)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Func const* v)
-{
-    return debug::proxy(
-        os,
-        "Func",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Macro const& v)
-{
-    return debug::with(
-        os,
-        "Macro",
-        debug::kv("id", v.id),
-        debug::kv("def", v.definition)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Macro const* v)
-{
-    return debug::proxy(
-        os,
-        "Macro",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, CallParam const& v)
-{
-    return debug::with(
-        os,
-        "Param",
-        debug::kv("argn", v.expr_list.size())
-    );
-}
-
 }}} // saya
 
 #endif

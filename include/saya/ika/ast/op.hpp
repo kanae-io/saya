@@ -4,8 +4,6 @@
 #include "saya/ika/ast_fwd.hpp"
 #include "saya/ika/ast/ast_entity.hpp"
 
-#include <boost/range/algorithm/copy.hpp>
-#include <boost/range/adaptor/transformed.hpp>
 #include <vector>
 
 
@@ -18,10 +16,6 @@ struct UOp<ops::FuncCall> : ASTEntity
     CallParam param;
     boost::optional<Block*> block;
 };
-inline std::ostream& operator<<(std::ostream& os, UOp<ops::FuncCall> const&)
-{
-    return debug::fixed_id(os, "UOp", "FuncCall");
-}
 
 template<>
 struct UOp<ops::MacroCall> : ASTEntity
@@ -31,45 +25,24 @@ struct UOp<ops::MacroCall> : ASTEntity
     boost::optional<CallParam> param;
     boost::optional<Geo*> geo;
 };
-inline std::ostream& operator<<(std::ostream& os, UOp<ops::MacroCall> const&)
-{
-    return debug::fixed_id(os, "UOp", "MacroCall");
-}
 
 template<>
 struct UOp<ops::Not> : ASTEntity
 {
     PrimaryExpr term0;
 };
-inline std::ostream& operator<<(std::ostream& os, UOp<ops::Not> const&)
-{
-    return debug::fixed_id(os, "UOp", "Not");
-}
 
 template<>
 struct UOp<ops::AddFamily> : ASTEntity
 {
     std::pair<bool, PrimaryExpr> term0;
 };
-inline std::ostream& operator<<(std::ostream& os, UOp<ops::AddFamily> const& v)
-{
-    if (v.term0.first) {
-        return debug::fixed_id(os, "UOp", "Add");
-    } else {
-        return debug::fixed_id(os, "UOp", "Sub");
-    }
-}
-
 template<>
 struct UOp<ops::Subscript> : ASTEntity
 {
     Var* var{nullptr};
     lit::Symbol* key{nullptr};
 };
-inline std::ostream& operator<<(std::ostream& os, UOp<ops::Subscript> const&)
-{
-    return debug::fixed_id(os, "UOp", "Subscript");
-}
 
 // ---------------------------------------------
 
@@ -79,50 +52,24 @@ struct BOp<ops::Pow> : ASTEntity
     UEntity term0;
     std::vector<UEntity> termN;
 };
-inline std::ostream& operator<<(std::ostream& os, BOp<ops::Pow> const&)
-{
-    return debug::fixed_id(os, "BOp", "Pow");
-}
 
 template<>
 struct BOp<ops::MulFamily> : ASTEntity
 {
     UEntity term0;
     std::vector<
-        std::pair<bool, UEntity>
+    std::pair<bool, UEntity>
     > termN;
 };
-inline std::ostream& operator<<(std::ostream& os, BOp<ops::MulFamily> const& v)
-{
-    return debug::with(
-        os,
-        debug::id("BOp"),
-        debug::kv(
-            "ops",
-            v.termN | boost::adaptors::transformed([] (auto const& kv) { return kv.first ? debug::id_arg("Mul") : debug::id_arg("Div"); })
-        )
-    );
-}
 
 template<>
 struct BOp<ops::AddFamily> : ASTEntity
 {
     UEntity term0;
     std::vector<
-        std::pair<bool, UEntity>
+    std::pair<bool, UEntity>
     > termN;
 };
-inline std::ostream& operator<<(std::ostream& os, BOp<ops::AddFamily> const& v)
-{
-    return debug::with(
-        os,
-        debug::id("BOp"),
-        debug::kv(
-            "ops",
-            v.termN | boost::adaptors::transformed([] (auto const& kv) { return kv.first ? debug::id_arg("Add") : debug::id_arg("Sub"); })
-        )
-    );
-}
 
 template<>
 struct BOp<ops::Assign> : ASTEntity
@@ -133,10 +80,6 @@ struct BOp<ops::Assign> : ASTEntity
     lhs_type term0;
     rhs_type termN;
 };
-inline std::ostream& operator<<(std::ostream& os, BOp<ops::Assign> const&)
-{
-    return debug::fixed_id(os, "BOp", "Assign");
-}
 
 }}} // saya
 

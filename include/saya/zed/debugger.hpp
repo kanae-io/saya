@@ -6,6 +6,9 @@
 #include <boost/phoenix/bind/bind_function_object.hpp>
 #include <boost/spirit/include/qi_nonterminal.hpp>
 
+#include <boost/fusion/include/for_each.hpp>
+
+#include <functional>
 #include <memory>
 #include <string>
 #include <iosfwd>
@@ -70,11 +73,17 @@ struct error_handler_impl
     }
 };
 
+template<class Printer>
 struct debugger
 {
+    using printer_type = Printer;
+
     static inline constexpr unsigned INDENT_BASE() noexcept { return 2u; }
     static inline constexpr unsigned PRINT_SOME() noexcept { return 20u; }
-    static std::ostream& out() noexcept { return std::cerr; }
+
+    explicit debugger(std::ostream& out)
+        : out_(std::addressof(out))
+    {}
 
     unsigned& get_indent() const
     {
@@ -133,11 +142,9 @@ struct debugger
             out() << "</attributes>";
 
             if (!boost::fusion::empty(context.locals)) {
-                out() <<
-                    "<locals>" <<
-                    context.locals <<
-                    "</locals>"
-                ;
+                out() << "<locals>";
+                boost::fusion::for_each(context.locals, printer_type{out()});
+                out() << "</locals>";
             }
             out() << '\n';
 
@@ -164,6 +171,10 @@ struct debugger
             break;
         }
     }
+
+private:
+    std::ostream& out() const { return *out_; }
+    mutable std::ostream* out_;
 };
 
 } // detail
@@ -175,10 +186,10 @@ lazy_error_handler(B const& b, E const& e, W const& w, I const& i)
     return boost::phoenix::function<detail::error_handler_impl>()(b, e, w, i);
 }
 
-template<class Rule>
-inline void debug(Rule& r)
+template<class Printer, class Rule>
+inline void debug(std::ostream& out, Rule& r)
 {
-    boost::spirit::qi::debug(r, detail::debugger());
+    boost::spirit::qi::debug(r, detail::debugger<Printer>{out});
 }
 
 }} // saya

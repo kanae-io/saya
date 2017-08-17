@@ -20,16 +20,6 @@ struct Namespace : ASTEntity
     {}
 };
 
-inline std::ostream& operator<<(std::ostream& os, Namespace const& v)
-{
-    return debug::with(
-        os,
-        "Namespace",
-        debug::kv("id", v.id),
-        debug::kv("stmt_list", v.stmt_list)
-    );
-}
-
 }}} // saya
 
 #endif

@@ -25,14 +25,14 @@ void source_id_access::mark_as_std(source_id& id)
 std::ostream& operator<<(std::ostream& os, source_id const& sid)
 {
     using K = SourceKind;
-    auto const* const is_std_ = sid.is_std() ? "std!" : "";
+    auto const* const is_std_ = sid.is_std() ? "[std]" : "";
 
     switch (sid.kind) {
     case K::MEMORY:
-        return os << "!" << is_std_ << "MEMORY:" << sid.id;
+        return os << "MEMORY:" << is_std_ << sid.id;
 
     case K::FILE:
-        return os << "!" << is_std_ << "FILE:" << sid.id;
+        return os << "FILE:" << is_std_ << sid.id;
 
     default:
         throw std::logic_error("unhandled source_id");

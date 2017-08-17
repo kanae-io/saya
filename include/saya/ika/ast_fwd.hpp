@@ -112,6 +112,8 @@ struct FuncDefinition;
 struct MacroDefinition;
 struct GroupDefinition;
 
+struct GroupChildSpecifier;
+
 struct Attribute;
 
 // --------------------------------------------------

@@ -46,11 +46,26 @@ target_link_libraries(
 
 # ------------------------------------------------------
 
+add_library(saya_ika_io STATIC "ast_io.cpp")
+
+target_include_directories(
+  saya_ika_io
+  SYSTEM BEFORE PUBLIC "${Boost_INCLUDE_DIRS}"
+)
+
+target_link_libraries(
+  saya_ika_io PUBLIC
+  saya
+)
+
+# ------------------------------------------------------
+
 add_executable(saya_ika_ikac "ikac.cpp")
 
 set_target_properties(
   saya_ika_ikac PROPERTIES
-  OUTPUT_NAME "ikac"
+  DEBUG_OUTPUT_NAME "ikac_d"
+  RELEASE_OUTPUT_NAME "ikac"
   COMPILE_DEFINITIONS "${SAYA_IKA_COMPILE_DEFINITIONS}"
 )
 
@@ -64,6 +79,7 @@ target_link_libraries(
   saya_ika_compiler
   saya_ika_evaluator
   saya_ika_generator
+  saya_ika_io
 )
 
 install(

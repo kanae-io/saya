@@ -131,17 +131,6 @@ protected:
     \
     SAYA_IKA_DEFINE_LIT_NAMESPACE_END
 
-
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-    { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(l.v) \
-        ); \
-    }
-
 // ------------------------------------------------------
 
 #define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
@@ -164,11 +153,11 @@ protected:
 
 // ------------------------------------------------------
 
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Symbol(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
-
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Int64(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_UInt64(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Real(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Symbol(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Int64(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_UInt64(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Real(lit_name)
 
 #define SAYA_IKA_DEFINE_LIT_BODY_FOR_Color(lit_name) \
     public: \
@@ -196,35 +185,10 @@ protected:
         } \
         std::uint8_t b() const noexcept { \
             return v & 0x0000FF00; \
-        } \
-        friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-        { \
-            return debug::with( \
-                os, \
-                BOOST_PP_STRINGIZE(lit_name), \
-                debug::literal(boost::str(boost::format("#%08X") % l.v)) \
-            ); \
         }
 
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Px(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-    { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(boost::str(boost::format("%upx") % l.v)) \
-        ); \
-    }
-
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Pct(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-    { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(boost::str(boost::format("%.2f%%") % l.v)) \
-        ); \
-    }
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Px(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Pct(lit_name)
 
 
 #define SAYA_IKA_DEFINE_LIT_BODY_FOR(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_ ## lit_name (lit_name)

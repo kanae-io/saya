@@ -58,21 +58,10 @@ struct Map : LiteralEntity
             swap(v, rhs.v);
         }
     }
+
+protected:
+    virtual std::size_t hash2_impl() const override { throw std::logic_error("can not hash lit::Map"); }
 };
-
-inline std::ostream& operator<<(std::ostream& os, Map::value_type const& kv)
-{
-    return os << debug::literal(kv.first) << ": " << kv.second;
-}
-
-inline std::ostream& operator<<(std::ostream& os, Map const& v)
-{
-    return debug::with(
-        os,
-        "Map",
-        debug::kv("map", v)
-    );
-}
 
 #include "saya/ika/vm/internal_undef.hpp"
 

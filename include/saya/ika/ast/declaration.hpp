@@ -20,17 +20,6 @@ struct Declaration : ASTEntity
     bool is_inline{true}; // IMPORTANT: this must be true by default
 };
 
-inline std::ostream& operator<<(std::ostream& os, Declaration const& v)
-{
-    return debug::with(
-        os,
-        "Decl",
-        debug::kv("groupable", v.groupable),
-        debug::kv("attr", v.attr),
-        debug::cond(v.is_inline, [] (auto& os) -> decltype(auto) { return os << "inline"; }, [] (auto& os) -> decltype(auto) { return os; })
-    );
-}
-
 }}} // saya
 
 #endif

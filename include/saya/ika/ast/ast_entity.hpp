@@ -2,7 +2,6 @@
 #define SAYA_IKA_AST_AST_ENTITY_HPP
 
 #include "saya/ika/ast_fwd.hpp"
-#include "saya/ika/ast/debug.hpp"
 
 namespace saya { namespace ika { namespace ast {
 

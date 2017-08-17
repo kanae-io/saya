@@ -23,31 +23,6 @@ struct Attribute : ASTEntity
     {}
 };
 
-inline std::ostream& operator<<(std::ostream& os, std::vector<Attribute::attr_type> const&)
-{
-    return debug::fixed_omitted(os, "Attribute::attrs");
-}
-
-inline std::ostream& operator<<(std::ostream& os, Attribute const& v)
-{
-    BOOST_ASSERT(!v.attrs.empty());
-
-    return debug::with(
-        os,
-        "Attr",
-        debug::kv("attrs", v.attrs)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, boost::optional<Attribute> const& v)
-{
-    return debug::proxy(
-        os,
-        "Attr",
-        v
-    );
-}
-
 }}} // saya
 
 #endif

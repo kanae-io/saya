@@ -2,6 +2,7 @@
 #define SAYA_IKA_EVALUATOR_HPP
 
 #include "saya/ika/ast_fwd.hpp"
+#include "saya/ika/error.hpp"
 
 #include "saya/logger/logger_env.hpp"
 
@@ -9,11 +10,6 @@
 
 
 namespace saya { namespace ika {
-
-struct eval_error : std::invalid_argument
-{
-    using std::invalid_argument::invalid_argument;
-};
 
 class evaluator
 {
