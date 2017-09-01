@@ -29,75 +29,14 @@ struct Geo : ASTEntity
 
     Dir dir;
     Justify justify;
-    boost::optional<Attribute> attr;
+    boost::optional<Attribute*> attr;
     boost::optional<Block*> block;
 
     Geo() = default;
-    explicit Geo(Dir const& dir, Justify const& j, boost::optional<Attribute> const& attr, boost::optional<Block*> const& block)
+    explicit Geo(Dir const& dir, Justify const& j, boost::optional<Attribute*> const& attr, boost::optional<Block*> const& block)
         : dir(dir), justify(j), attr(attr), block(block)
     {}
 };
-
-inline std::ostream& operator<<(std::ostream& os, Geo::Dir d)
-{
-    switch (d) {
-    case Geo::Dir::HOR:
-        return os << "HOR";
-
-    case Geo::Dir::HOR_REV:
-        return os << "HOR_REV";
-
-    case Geo::Dir::VER:
-        return os << "VER";
-
-    case Geo::Dir::VER_REV:
-        return os << "VER_REV";
-
-    default:
-        throw std::logic_error("not implemented");
-    }
-}
-
-inline std::ostream& operator<<(std::ostream& os, Geo::Justify j)
-{
-    switch (j) {
-    case Geo::Justify::EXPAND:
-        return os << "EXPAND";
-
-    case Geo::Justify::START:
-        return os << "START";
-
-    case Geo::Justify::END:
-        return os << "END";
-
-    case Geo::Justify::CENTER:
-        return os << "CENTER";
-
-    default:
-        throw std::logic_error("not implemented");
-    }
-}
-
-inline std::ostream& operator<<(std::ostream& os, Geo const& v)
-{
-    return debug::with(
-        os,
-        "Geo",
-        debug::kv("dir", debug::literal(v.dir)),
-        debug::kv("justify", debug::literal(v.justify)),
-        debug::kv("attr", v.attr),
-        debug::kv("block", v.block)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Geo const* v)
-{
-    return debug::proxy(
-        os,
-        "Geo",
-        v
-    );
-}
 
 }}} // saya
 

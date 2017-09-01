@@ -90,14 +90,24 @@ struct LookupQuery<Macro>
 template<>
 struct LookupQuery<Group>
 {
+    bool dig{false};
     std::deque<GroupID> qualifier;
     GroupID target;
+    boost::optional<AdditionalClass*> additional_class;
 
     std::size_t ctx_hash{static_cast<std::size_t>(-1)};
 
-    explicit LookupQuery(std::deque<GroupID> const& qualifier, GroupID const& target)
-        : qualifier(qualifier)
+    explicit LookupQuery(bool dig, std::deque<GroupID> const& qualifier, GroupID const& target, boost::optional<AdditionalClass*> const& additional_class)
+        : dig(dig)
+        , qualifier(qualifier)
         , target(target)
+        , additional_class(additional_class)
+    {}
+
+    explicit LookupQuery(bool dig, GroupID const& target, boost::optional<AdditionalClass*> const& additional_class)
+        : dig(dig)
+        , target(target)
+        , additional_class(additional_class)
     {}
 
     explicit LookupQuery(GroupID const& target)
@@ -108,28 +118,31 @@ struct LookupQuery<Group>
 template<>
 struct LookupQuery<Endpoint>
 {
-    std::deque<GroupID> qualifier;
+    // std::deque<GroupID> qualifier;
     EndpointID target;
+    boost::optional<AdditionalClass*> additional_class;
 
     std::size_t ctx_hash{static_cast<std::size_t>(-1)};
 
-    explicit LookupQuery(std::deque<GroupID> const& qualifier, EndpointID const& target)
-        : qualifier(qualifier)
-        , target(target)
-    {}
-
-    explicit LookupQuery(EndpointID const& target)
+    explicit LookupQuery(EndpointID const& target, boost::optional<AdditionalClass*> const& additional_class)
         : target(target)
+        , additional_class(additional_class)
     {}
 };
 
-template<class T>
+template<class T, std::enable_if_t<!std::is_same<Endpoint, T>::value, int> = 0>
 inline bool operator==(LookupQuery<T> const& lhs, LookupQuery<T> const& rhs)
 {
     return
         lhs.target == rhs.target &&
         std::equal(lhs.qualifier.begin(), lhs.qualifier.end(), rhs.qualifier.begin(), rhs.qualifier.end())
     ;
+}
+
+template<class T, std::enable_if_t<std::is_same<Endpoint, T>::value, int> = 0>
+inline bool operator==(LookupQuery<T> const& lhs, LookupQuery<T> const& rhs)
+{
+    return lhs.target == rhs.target;
 }
 
 template<class T>

@@ -12,6 +12,8 @@ namespace saya { namespace ika { namespace ast {
 struct Stmt : ASTEntity
 {
     using st_content_type = boost::variant<
+        boost::recursive_wrapper<Namespace*>,
+
         boost::recursive_wrapper<Declaration>,
 
         boost::recursive_wrapper<Geo*>,
@@ -22,20 +24,12 @@ struct Stmt : ASTEntity
         boost::recursive_wrapper<FuncDefinition>,
         boost::recursive_wrapper<MacroDefinition>,
 
+        SideEffectExpr,
         Expr
     >;
 
     st_content_type st;
 };
-
-inline std::ostream& operator<<(std::ostream& os, Stmt const& v)
-{
-    return debug::with(
-        os,
-        "Stmt",
-        debug::kv("st", v.st)
-    );
-}
 
 }}} // saya
 

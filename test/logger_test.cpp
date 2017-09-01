@@ -9,7 +9,7 @@
 TEST(Logger, NoPrompt)
 {
     std::ostringstream oss;
-    saya::logger l({}, oss, oss);
+    saya::logger l{saya::logger_env{oss}};
     l.color(false);
 
     EXPECT_TRUE(oss.str().empty());
@@ -22,7 +22,7 @@ TEST(Logger, NoPrompt)
 TEST(Logger, NoteShouldIndentWell)
 {
     std::ostringstream oss;
-    saya::logger l(APP_NAME, oss, oss);
+    saya::logger l{saya::logger_env{oss}, APP_NAME};
     l.color(false);
 
     l.note() << "1" << std::endl;
@@ -44,7 +44,7 @@ TEST(Logger, NoteShouldIndentWell)
 TEST(Logger, SingleLineWithColor)
 {
     std::ostringstream oss;
-    saya::logger l{APP_NAME, oss, oss};
+    saya::logger l{saya::logger_env{oss}, APP_NAME};
     // l.color(true);
 
     l.info() << "Hello" << ", " << "INFO" << std::endl;

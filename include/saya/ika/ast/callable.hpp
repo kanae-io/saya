@@ -15,32 +15,32 @@ namespace saya { namespace ika { namespace ast {
 struct Func : ASTEntity
 {
     FuncID id;
-    Block const* definition{nullptr};
+    Block* definition{nullptr};
 
     explicit Func(FuncID const& id)
         : id(id)
     {}
 
-    void operator[](Block const* b)
+    void operator[](Block* v)
     {
-        BOOST_ASSERT(b);
-        definition = b;
+        BOOST_ASSERT(v);
+        definition = v;
     }
 };
 
 struct Macro : ASTEntity
 {
     MacroID id;
-    Geo const* definition{nullptr};
+    Geo* definition{nullptr};
 
     explicit Macro(MacroID const& id)
         : id(id)
     {}
 
-    void operator[](Geo const* g)
+    void operator[](Geo* v)
     {
-        BOOST_ASSERT(g);
-        definition = g;
+        BOOST_ASSERT(v);
+        definition = v;
     }
 };
 
@@ -48,54 +48,6 @@ struct CallParam : ASTEntity
 {
     std::vector<Expr> expr_list;
 };
-
-
-inline std::ostream& operator<<(std::ostream& os, Func const& v)
-{
-    return debug::with(
-        os,
-        "Func",
-        debug::kv("id", debug::id_arg(*v.id.get())),
-        debug::kv("def", v.definition)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Func const* v)
-{
-    return debug::proxy(
-        os,
-        "Func",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Macro const& v)
-{
-    return debug::with(
-        os,
-        "Macro",
-        debug::kv("id", debug::id_arg(*v.id.get())),
-        debug::kv("def", v.definition)
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Macro const* v)
-{
-    return debug::proxy(
-        os,
-        "Macro",
-        v
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, CallParam const& v)
-{
-    return debug::with(
-        os,
-        "Param",
-        debug::kv("argn", v.expr_list.size())
-    );
-}
 
 }}} // saya
 

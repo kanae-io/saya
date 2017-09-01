@@ -1,7 +1,7 @@
 #ifndef SAYA_IKA_AST_FUSION_ADAPT_HPP
 #define SAYA_IKA_AST_FUSION_ADAPT_HPP
 
-#include "saya/ika/ast/detail/all.hpp"
+#include "saya/ika/ast/all.hpp"
 
 #include <boost/fusion/include/adapt_struct.hpp>
 
@@ -17,17 +17,20 @@
 
 #include "saya/ika/vm/internal_def.hpp"
 
-#define SAYA_DEF_I(vtmapid, lit_name, unused0) \
+#define SAYA_DEF_I(unused0, lit_name, unused1) \
     BOOST_FUSION_ADAPT_STRUCT( \
         saya::ika::ast::lit::lit_name, \
-        (saya::ika::vm::TypeID, type_id) \
-        (SAYA_IKA_VM_INTERNAL_TYPE_FOR(SAYA_IKA_VM_LIT_VTYPEMAP_FOR(vtmapid)), v) \
+        (saya::ika::ast::lit::lit_name::internal_type, v) \
     )
 
 #define SAYA_DEF(z, i, d) \
     SAYA_DEF_I BOOST_PP_SEQ_ELEM(i, d)
 
 BOOST_PP_EXPAND(BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP), SAYA_DEF, SAYA_IKA_VM_LIT_TYPEMAP))
+
+// meta types
+SAYA_DEF_I(_, Map, _)
+
 
 #undef SAYA_DEF_I
 #undef SAYA_DEF
@@ -38,6 +41,7 @@ BOOST_PP_EXPAND(BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP), SAYA
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Namespace,
     (saya::ika::ast::NSID, id)
+    (std::vector<saya::ika::ast::Stmt>, stmt_list)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -49,13 +53,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Func,
     (saya::ika::ast::FuncID, id)
-    (saya::ika::ast::Block const*, definition)
+    (saya::ika::ast::Block*, definition)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Macro,
     (saya::ika::ast::MacroID, id)
-    (saya::ika::ast::Geo const*, definition)
+    (saya::ika::ast::Geo*, definition)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -100,11 +104,15 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
+    saya::ika::ast::AdditionalClass,
+    (std::vector<std::string>, classes)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Declaration,
     (typename saya::ika::ast::Declaration::groupable_type, groupable)
-    (std::vector<std::string>, additional_class)
-    (boost::optional<saya::ika::ast::Attribute>, attr)
-    (bool, is_inline_definition)
+    (boost::optional<saya::ika::ast::Attribute*>, attr)
+    (bool, is_inline)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -121,9 +129,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::GroupChildSpecifier,
-    (saya::ika::ast::Group*, child_group)
-    (std::vector<std::string>, additional_class)
-    (boost::optional<saya::ika::ast::Attribute>, attr)
+    (saya::ika::ast::Group*, child)
+    (boost::optional<saya::ika::ast::Attribute*>, attr)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -142,7 +149,7 @@ BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Geo,
     (saya::ika::ast::Geo::Dir, dir)
     (saya::ika::ast::Geo::Justify, justify)
-    (boost::optional<saya::ika::ast::Attribute>, attr)
+    (boost::optional<saya::ika::ast::Attribute*>, attr)
     (boost::optional<saya::ika::ast::Block*>, block)
 )
 
@@ -150,7 +157,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::DefaultSpecifier,
-    (saya::ika::ast::Geo const*, geo)
+    (saya::ika::ast::Geo*, definition)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -163,17 +170,17 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::UOp<saya::ika::ast::ops::FuncCall>,
-    (saya::ika::ast::Func const*, func)
+    (saya::ika::ast::Func*, func)
     (saya::ika::ast::CallParam, param)
-    (boost::optional<saya::ika::ast::Block const*>, block)
+    (boost::optional<saya::ika::ast::Block*>, block)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::UOp<saya::ika::ast::ops::MacroCall>,
-    (saya::ika::ast::Macro const*, macro)
-    (std::vector<std::string>, additional_class)
+    (saya::ika::ast::Macro*, macro)
+    (boost::optional<saya::ika::ast::AdditionalClass*>, additional_class)
     (boost::optional<saya::ika::ast::CallParam>, param)
-    (boost::optional<saya::ika::ast::Geo const*>, geo)
+    (boost::optional<saya::ika::ast::Geo*>, geo)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -184,6 +191,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::UOp<saya::ika::ast::ops::AddFamily>,
     (auto, term0)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    saya::ika::ast::UOp<saya::ika::ast::ops::Subscript>,
+    (saya::ika::ast::Var*, var)
+    (saya::ika::ast::lit::Symbol*, key)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -215,13 +228,15 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Group,
     (saya::ika::ast::GroupID, id)
-    (boost::optional<saya::ika::ast::Attribute>, attr)
+    (boost::optional<saya::ika::ast::AdditionalClass*>, additional_class)
+    (boost::optional<saya::ika::ast::Attribute*>, attr)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
     saya::ika::ast::Endpoint,
     (saya::ika::ast::EndpointID, id)
-    (boost::optional<saya::ika::ast::Attribute>, attr)
+    (boost::optional<saya::ika::ast::AdditionalClass*>, additional_class)
+    (boost::optional<saya::ika::ast::Attribute*>, attr)
 )
 
 // ---------------------------------------------

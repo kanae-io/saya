@@ -10,12 +10,14 @@
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
+#include <boost/variant/variant.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/tuple/push_back.hpp>
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/seq/size.hpp>
+#include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/repetition/for.hpp>
 
 #include <functional>
@@ -65,11 +67,18 @@ protected:
 
 #include "saya/ika/vm/internal_def.hpp"
 
+#define SAYA_IKA_DEFINE_LIT_NAMESPACE_BEGIN namespace saya { namespace ika { namespace ast { namespace lit {
+#define SAYA_IKA_DEFINE_LIT_NAMESPACE_END }}}}
+
 #define SAYA_IKA_DEFINE_LIT_BEGIN(magic_i, vtypemap, lit_name) \
-    namespace saya { namespace ika { namespace ast { namespace lit { \
+    SAYA_IKA_DEFINE_LIT_NAMESPACE_BEGIN \
+    \
+    std::size_t hash_value(lit_name const& v); \
+    \
     struct lit_name : LiteralEntity \
     { \
         static constexpr std::size_t MAGIC_ID() noexcept { return magic_i; } \
+        SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR(lit_name) \
         static char const* LIT_NAME() noexcept { return BOOST_PP_STRINGIZE(lit_name); } \
         static vm::TypeID TYPE_ID() { return vm::types::SAYA_IKA_VM_INTERNAL_NAME_FOR(vtypemap)(); } \
         \
@@ -98,12 +107,9 @@ protected:
             } \
         } \
         \
-        friend inline std::size_t hash_value(lit_name const& lv) \
+        inline bool operator==(lit_name const& rhs) const \
         { \
-            std::size_t seed = 0; \
-            boost::hash_combine(seed, lit_name::MAGIC_ID()); \
-            boost::hash_combine(seed, lv.v); \
-            return seed; \
+            return v == rhs.v; \
         } \
         \
         protected: \
@@ -114,22 +120,44 @@ protected:
 
 #define SAYA_IKA_DEFINE_LIT_END(lit_name) \
     }; \
-    }}}}
-
-
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
+    \
+    inline std::size_t hash_value(lit_name const& v) \
     { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(l.v) \
-        ); \
-    }
+        std::size_t seed = 0; \
+        boost::hash_combine(seed, lit_name::MAGIC_ID()); \
+        boost::hash_combine(seed, v.v); \
+        return seed; \
+    } \
+    \
+    SAYA_IKA_DEFINE_LIT_NAMESPACE_END
 
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Int64(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_UInt64(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Real(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
+// ------------------------------------------------------
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Symbol(lit_name) \
+    static constexpr char MAGIC_TOKEN() noexcept { return ':'; }
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Int64(lit_name) \
+    static constexpr char MAGIC_TOKEN() noexcept { return '-'; }
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_UInt64(lit_name) SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Real(lit_name) SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Color(lit_name) \
+    static constexpr char MAGIC_TOKEN() noexcept { return '#'; }
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Px(lit_name) SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Pct(lit_name) SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String(lit_name)
+
+#define SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR(lit_name) SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_ ## lit_name (lit_name)
+
+// ------------------------------------------------------
+
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_String(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Symbol(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Int64(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_UInt64(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Real(lit_name)
 
 #define SAYA_IKA_DEFINE_LIT_BODY_FOR_Color(lit_name) \
     public: \
@@ -157,35 +185,10 @@ protected:
         } \
         std::uint8_t b() const noexcept { \
             return v & 0x0000FF00; \
-        } \
-        friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-        { \
-            return debug::with( \
-                os, \
-                BOOST_PP_STRINGIZE(lit_name), \
-                debug::literal(boost::str(boost::format("#%08X") % l.v)) \
-            ); \
         }
 
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Px(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-    { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(boost::str(boost::format("%upx") % l.v)) \
-        ); \
-    }
-
-#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Pct(lit_name) \
-    friend inline std::ostream& operator<<(std::ostream& os, self_type const& l) \
-    { \
-        return debug::with( \
-            os, \
-            BOOST_PP_STRINGIZE(lit_name), \
-            debug::literal(boost::str(boost::format("%.2f%%") % l.v)) \
-        ); \
-    }
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Px(lit_name)
+#define SAYA_IKA_DEFINE_LIT_BODY_FOR_Pct(lit_name)
 
 
 #define SAYA_IKA_DEFINE_LIT_BODY_FOR(lit_name) SAYA_IKA_DEFINE_LIT_BODY_FOR_ ## lit_name (lit_name)
@@ -206,23 +209,64 @@ protected:
     SAYA_DEF_I(BOOST_PP_TUPLE_PUSH_BACK(BOOST_PP_SEQ_ELEM(i, d), i))
 
 BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP), SAYA_DEF, SAYA_IKA_VM_LIT_TYPEMAP)
+
 #undef SAYA_DEF_II
 #undef SAYA_DEF_I
 #undef SAYA_DEF
 
+#define SAYA_DEF_I(lit_name) \
+    namespace std { \
+    template<> \
+    struct hash<::saya::ika::ast::lit::lit_name> \
+    { \
+        size_t operator()(::saya::ika::ast::lit::lit_name const& v) const \
+        { \
+            return ::saya::ika::ast::lit::hash_value(v); \
+        } \
+    }; \
+    }
+
+#define SAYA_DEF(z, i, d) SAYA_DEF_I(BOOST_PP_SEQ_ELEM(i, d))
+
+BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY), SAYA_DEF, SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY)
+#undef SAYA_DEF_I
+#undef SAYA_DEF
+
+
+namespace saya { namespace ika { namespace ast { namespace lit {
+
+using all_type = boost::variant<
+    BOOST_PP_SEQ_ENUM(SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY)
+>;
+
+}}}} // saya
+
 // -----------
+
+#undef SAYA_IKA_DEFINE_LIT_NAMESPACE_BEGIN
+#undef SAYA_IKA_DEFINE_LIT_NAMESPACE_END
 
 #undef SAYA_IKA_DEFINE_LIT_BEGIN
 #undef SAYA_IKA_DEFINE_LIT_END
 
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_String
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Symbol
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Int64
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_UInt64
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Real
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Color
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Px
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR_Pct
+#undef SAYA_IKA_DEFINE_LIT_MAGIC_TOKEN_FOR
+
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_String
+#undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Symbol
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Int64
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_UInt64
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Real
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Color
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Px
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR_Pct
-
 #undef SAYA_IKA_DEFINE_LIT_BODY_FOR
 #undef SAYA_DEF
 

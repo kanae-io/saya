@@ -13,34 +13,15 @@ namespace saya { namespace ika { namespace ast {
 
 struct DefaultSpecifier : ASTEntity
 {
-    Geo const* geo;
+    Geo* definition{nullptr};
 };
-
-inline std::ostream& operator<<(std::ostream& os, DefaultSpecifier const&)
-{
-    return debug::fixed_omitted(
-        os,
-        "DefaultSpecifier"
-    );
-}
 
 struct Argument : ASTEntity
 {
-    Var* var;
+    Var* var{nullptr};
     boost::optional<Expr> maybe_default;
 };
 
-inline std::ostream& operator<<(std::ostream& os, Argument const& v)
-{
-    BOOST_ASSERT(v.var);
-
-    return debug::with(
-        os,
-        "Arg",
-        debug::kv("id", *v.var->id.get()),
-        debug::cond(static_cast<bool>(v.maybe_default), [] (auto& os) -> decltype(auto) { return os << "defaulted"; }, [] (auto& os) -> decltype(auto) { return os; })
-    );
-}
 
 }}} // saya
 

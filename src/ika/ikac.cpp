@@ -1,10 +1,11 @@
-#include "saya/ika/compiler.hpp"
 #include "saya/ika/compiler/bridge.hpp"
+#include "saya/ika/compiler.hpp"
 
-#include "saya/ika/grammar/to_ast.hpp"
+#include "saya/ika/vm/type.hpp"
+#include "saya/ika/ast/id.hpp"
 
 #include "saya/logger.hpp"
-#include "saya/filesystem.hpp"
+#include "saya/error.hpp"
 
 #include "saya/stream_lock.hpp"
 
@@ -74,19 +75,23 @@ public:
 
         // compile ----------------------------------------------
 
-        saya::ika::compiler<saya::ika::grammar::to_ast>
-        compiler{&l_, saya::ika::compiler_options{
-            // TBD
+        saya::ika::compiler
+        compiler{l_.env(), saya::ika::compiler_options{
+            brg.ikastd(),
         }};
+
+        compiler.compile_ikastd();
 
         // for each input files
         for (auto const& path : brg.input_files()) try {
-            auto const buf{saya::read<char>(path)};
-
-            compiler.set_buf(&buf);
-            compiler.compile();
+            auto const bundle = saya::ika::make_source(path);
+            compiler.compile(bundle);
 
         } catch (saya::io_error const& e) {
+            l_.error() << e.what() << std::endl;
+            return EXIT_FAILURE;
+
+        } catch (saya::ika::eval_error const& e) {
             l_.error() << e.what() << std::endl;
             return EXIT_FAILURE;
 

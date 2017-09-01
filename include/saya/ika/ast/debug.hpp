@@ -2,6 +2,8 @@
 #define SAYA_IKA_AST_DEBUG_HPP
 
 #include "saya/ika/ast_fwd.hpp"
+#include "saya/ika/ast/io_fwd.hpp"
+
 #include "saya/console.hpp"
 #include "saya/blackhole.hpp"
 
@@ -17,6 +19,15 @@
 
 namespace saya { namespace ika { namespace ast { namespace debug {
 
+using ::saya::ika::ast::io::operator<<;
+
+template<class T, std::enable_if_t<saya::is_variant_v<T>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, T const& v)
+{
+    io::variant_printer visitor{os};
+    return boost::apply_visitor(visitor, v);
+}
+
 inline std::ostream& reset(std::ostream& os)
 {
     return os << saya::console::color::RESET();
@@ -28,6 +39,7 @@ inline std::ostream& type(std::ostream& os, char const* t)
 }
 
 namespace detail {
+using ::saya::ika::ast::io::operator<<;
 
 template<class Iterator>
 struct kv_printer
@@ -39,6 +51,7 @@ struct kv_printer
     template<class KV>
     auto operator()(KV const& kv_) const
     {
+        using ::saya::ika::ast::io::operator<<;
         it++ = kv_;
         return nullptr;
     }
@@ -64,7 +77,21 @@ struct literal_wrapper
 template<class T>
 std::ostream& operator<<(std::ostream& os, literal_wrapper<T> const& v)
 {
+    using ::saya::ika::ast::io::operator<<;
     return os << saya::console::color::UNDERLINED() << saya::console::color::fg::LIGHTRED() << v.v << reset;
+}
+
+template<class T>
+struct subtype_wrapper
+{
+    T const& v;
+};
+
+template<class T>
+std::ostream& operator<<(std::ostream& os, subtype_wrapper<T> const& v)
+{
+    using ::saya::ika::ast::io::operator<<;
+    return os << saya::console::color::UNDERLINED() << saya::console::color::fg::YELLOW() << v.v << reset;
 }
 
 template<class T>
@@ -76,6 +103,7 @@ struct id_wrapper
 template<class T>
 std::ostream& operator<<(std::ostream& os, id_wrapper<T> const& v)
 {
+    using ::saya::ika::ast::io::operator<<;
     return os << saya::console::color::BOLD() << saya::console::color::fg::GREEN() << v.v << reset;
 }
 
@@ -88,22 +116,36 @@ struct id_arg_wrapper
 template<class T>
 std::ostream& operator<<(std::ostream& os, id_arg_wrapper<T> const& v)
 {
+    using ::saya::ika::ast::io::operator<<;
     return os << saya::console::color::UNDERLINED() << saya::console::color::fg::GREEN() << v.v << reset;
 }
 
-
 template<class K, class V, class F = void, class Enabled = void>
-struct term
+struct term;
+
+template<class K, class V>
+struct term<K, V>
 {
     K k;
     V const& v;
 };
 
+// template<class K, class V, class F>
+// struct term<K, V&&, F>
+// {
+//     K k;
+//     V const v;
+// };
+
 template<class K, class V>
-struct term<K, V*>
+struct term<K, V const*>
 {
     K k;
     V const* v;
+
+    explicit term(K const& k, V const* v)
+        : k(k), v(v)
+    {}
 };
 
 template<class K, class V>
@@ -121,12 +163,6 @@ template<class T>
 static constexpr bool
 is_range_v<T*> = false;
 
-template<class K, class Range>
-struct term<K, Range, void, std::enable_if_t<is_range_v<Range>>>
-{
-    K k;
-    Range const& r;
-};
 
 template<class K, class F>
 struct term<K, void, F>
@@ -163,9 +199,18 @@ make_term(F&& f)
     return {std::forward<F>(f)};
 }
 
+template<class T>
+T const& deref_once(T const& v) { return v; }
+
+template<class T>
+T const& deref_once(T* v) { return *v; }
+
+
 template<class K, class V, std::enable_if_t<!is_range_v<V>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, term<K, V> const& kv_)
 {
+    using ::saya::ika::ast::io::operator<<;
+
     if (!kv_.k) {
         return os << saya::console::color::BOLD() << saya::console::color::fg::CYAN() << kv_.v;
     }
@@ -174,12 +219,13 @@ inline std::ostream& operator<<(std::ostream& os, term<K, V> const& kv_)
 }
 
 template<class K, class V>
-inline std::ostream& operator<<(std::ostream& os, term<K, V*> const& kv_)
+inline std::ostream& operator<<(std::ostream& os, term<K, V const*> const& kv_)
 {
+    using ::saya::ika::ast::io::operator<<;
     os << saya::console::color::fg::MAGENTA() << kv_.k << reset << ": ";
 
     if (!kv_.v) {
-        return os << saya::console::color::BOLD() << saya::console::color::fg::DARKGRAY() << "(none)" << reset;
+        return os << saya::console::color::BOLD() << saya::console::color::fg::RED() << "INVALID" << reset;
     } else {
         return os << *kv_.v;
     }
@@ -188,25 +234,27 @@ inline std::ostream& operator<<(std::ostream& os, term<K, V*> const& kv_)
 template<class K, class V>
 inline std::ostream& operator<<(std::ostream& os, term<K, boost::optional<V>> const& kv_)
 {
+    using ::saya::ika::ast::io::operator<<;
     os << saya::console::color::fg::MAGENTA() << kv_.k << reset << ": ";
 
     if (!kv_.v) {
         return os << saya::console::color::BOLD() << saya::console::color::fg::DARKGRAY() << "(none)" << reset;
     } else {
-        return os << *kv_.v;
+        return os << deref_once(*kv_.v);
     }
 }
 
 template<class K, class Range, std::enable_if_t<is_range_v<Range>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, term<K, Range, void> const& t)
 {
-    if (t.r.empty()) return os;
+    using ::saya::ika::ast::io::operator<<;
+    if (t.v.empty()) return os;
 
     os << "[";
     auto oj = std::experimental::make_ostream_joiner(os, ", ");
     auto kvp = detail::make_kv_printer(oj);
 
-    for (auto const& e : t.r) {
+    for (auto const& e : t.v) {
         kvp(e);
     }
 
@@ -216,6 +264,7 @@ inline std::ostream& operator<<(std::ostream& os, term<K, Range, void> const& t)
 template<class K, class F>
 inline std::ostream& operator<<(std::ostream& os, term<K, void, F> const& t)
 {
+    using ::saya::ika::ast::io::operator<<;
     os << saya::console::color::fg::MAGENTA() << t.k << reset << ": ";
     return t.f(os);
 }
@@ -223,6 +272,7 @@ inline std::ostream& operator<<(std::ostream& os, term<K, void, F> const& t)
 template<class F>
 inline std::ostream& operator<<(std::ostream& os, term<void, void, F> const& t)
 {
+    using ::saya::ika::ast::io::operator<<;
     return t.f(os);
 }
 
@@ -239,6 +289,13 @@ literal(T const& v)
 }
 
 // ----------------------------------------------------
+
+template<class T>
+inline detail::subtype_wrapper<std::decay_t<T const>>
+subtype(T const& v)
+{
+    return {v};
+}
 
 template<class T>
 inline detail::id_wrapper<std::decay_t<T const>>
@@ -271,7 +328,7 @@ kv(K const& k, V const& v)
 template<class K, class V>
 inline detail::term<
     std::decay_t<K const>,
-    V*
+    V const*
 >
 kv(K const& k, V const* v)
 {
@@ -285,6 +342,7 @@ template<class K, class T>
 inline std::ostream&
 fixed(std::ostream& os, K const& t, T const& what_)
 {
+    using ::saya::ika::ast::io::operator<<;
     type(os, t);
     return os << saya::console::color::fg::DARKGRAY() << "(" << what_ << ")" << reset;
 }
@@ -298,6 +356,13 @@ fixed_none(std::ostream& os, K const& t)
 
 template<class K>
 inline std::ostream&
+fixed_empty(std::ostream& os, K const& t)
+{
+    return fixed(os, t, "empty");
+}
+
+template<class K>
+inline std::ostream&
 fixed_omitted(std::ostream& os, K const& t)
 {
     return fixed(os, t, "omitted");
@@ -305,16 +370,18 @@ fixed_omitted(std::ostream& os, K const& t)
 
 template<class K, class L>
 inline std::ostream&
-fixed_id(std::ostream& os, K const& id_, L const& arg_)
+fixed_id(std::ostream& os, K const& id_, L const& stype_)
 {
-    return os << id(id_) << "(" << id_arg(arg_) << ")";
+    using ::saya::ika::ast::io::operator<<;
+    return os << id<std::decay_t<K const>>(id_) << "(" << subtype<std::decay_t<L const>>(stype_) << ")";
 }
 
 template<class K>
 inline std::ostream&
 fixed_id(std::ostream& os, K const& id_)
 {
-    return os << id(id_);
+    using ::saya::ika::ast::io::operator<<;
+    return os << id<std::decay_t<K const>>(id_);
 }
 
 
@@ -325,6 +392,7 @@ template<class K, class T>
 inline std::ostream&
 expect(std::ostream& os, K const& t, T const* v)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (!v) {
         return os << t << "(" << saya::console::color::BOLD() << saya::console::color::fg::RED() << "INVALID" << reset << ")";
     } else {
@@ -336,6 +404,7 @@ template<class K, class T>
 inline std::ostream&
 expect(std::ostream& os, K const& t, boost::optional<T> const& v)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (!v) {
         return os << t << "(" << saya::console::color::BOLD() << saya::console::color::fg::RED() << "INVALID" << reset << ")";
     } else {
@@ -346,6 +415,7 @@ expect(std::ostream& os, K const& t, boost::optional<T> const& v)
 inline std::ostream&
 flags(std::ostream& os, std::vector<char const*> flags)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (!flags.empty()) {
         boost::copy(
             flags | boost::adaptors::transformed([] (auto const* str) -> std::string { return std::string(saya::console::color::BOLD()) + saya::console::color::fg::CYAN() + str; }),
@@ -366,6 +436,7 @@ template<class K, class TrueF, class FalseF>
 inline detail::term<std::decay_t<K const>, void, std::function<std::ostream&(std::ostream&)>>
 cond(K const& k, bool cond_, TrueF true_, FalseF false_)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (cond_) {
         return detail::make_term(
             k,
@@ -384,6 +455,7 @@ template<class TrueF, class FalseF>
 inline detail::term<void, void, std::function<std::ostream&(std::ostream&)>>
 cond(bool cond_, TrueF true_, FalseF false_)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (cond_) {
         return detail::make_term(
             std::bind([] (std::ostream& os, auto f) -> decltype(auto) { os << saya::console::color::BOLD() << saya::console::color::fg::CYAN(); f(os); return os << reset; }, std::placeholders::_1, true_)
@@ -398,6 +470,7 @@ cond(bool cond_, TrueF true_, FalseF false_)
 
 inline std::ostream& name(std::ostream& os, char const* t)
 {
+    using ::saya::ika::ast::io::operator<<;
     return os << saya::console::color::fg::BLUE() << t << reset;
 }
 
@@ -405,6 +478,7 @@ template<class K, class... KV>
 inline std::ostream&
 with(std::ostream& os, K const& k, KV&&... kvs)
 {
+    using ::saya::ika::ast::io::operator<<;
     os << k << "({ ";
 
     auto oj = std::experimental::make_ostream_joiner(os, ", ");
@@ -419,6 +493,7 @@ template<class... KV>
 inline std::ostream&
 with(std::ostream& os, char const* t, KV&&... kvs)
 {
+    using ::saya::ika::ast::io::operator<<;
     type(os, t);
     os << "({ ";
 
@@ -434,6 +509,7 @@ template<class T>
 inline std::ostream&
 proxy(std::ostream& os, char const* t, boost::optional<T> const& v)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (!v) {
         return fixed_none(os, t);
     }
@@ -445,6 +521,7 @@ template<class T>
 inline std::ostream&
 proxy(std::ostream& os, char const* t, T const* v)
 {
+    using ::saya::ika::ast::io::operator<<;
     if (!v) {
         return fixed_none(os, t);
     }

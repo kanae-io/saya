@@ -1,8 +1,7 @@
 #ifndef SAYA_IKA_GRAMMAR_DETAIL_SPIRIT_ATTRIBUTE_SUPPORT_HPP
 #define SAYA_IKA_GRAMMAR_DETAIL_SPIRIT_ATTRIBUTE_SUPPORT_HPP
 
-#include "saya/ika/ast/id.hpp"
-#include "saya/ika/ast/lit.hpp"
+#include "saya/ika/ast/io_fwd.hpp"
 
 #include <boost/spirit/include/support_attributes.hpp>
 #include <boost/assert.hpp>
@@ -11,26 +10,26 @@
 #include <type_traits>
 
 
-template<class Out, class T>
-struct boost::spirit::traits::print_attribute_debug<Out, std::unique_ptr<T>>
+template<class Out>
+struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Namespace*>
 {
-    static void call(Out& out, std::unique_ptr<T> const& val)
+    static void call(Out& out, saya::ika::ast::Namespace const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
-            boost::spirit::traits::print_attribute(out, *val);
+            out << *val;
         } else {
-            out << "(invalid_unique_ptr)";
+            out << "(invalid_namespace_ptr)";
         }
     }
 };
-
-#if 0
 
 template<class Out>
 struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Var*>
 {
     static void call(Out& out, saya::ika::ast::Var const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
             out << *val;
         } else {
@@ -44,6 +43,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Func*>
 {
     static void call(Out& out, saya::ika::ast::Func const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
             out << *val;
         } else {
@@ -57,6 +57,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Macro*>
 {
     static void call(Out& out, saya::ika::ast::Macro const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
             boost::spirit::traits::print_attribute(out, *val);
         } else {
@@ -70,6 +71,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Group*>
 {
     static void call(Out& out, saya::ika::ast::Group const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
             out << *val;
         } else {
@@ -83,6 +85,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Endpoin
 {
     static void call(Out& out, saya::ika::ast::Endpoint const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         if (val) {
             out << *val;
         } else {
@@ -91,13 +94,13 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Endpoin
     }
 };
 
-#endif // 0
 
 template<class Out>
 struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Block>
 {
     static void call(Out& out, saya::ika::ast::Block const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -107,6 +110,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::CallPar
 {
     static void call(Out& out, saya::ika::ast::CallParam const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -116,6 +120,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::NSID>
 {
     static void call(Out& out, saya::ika::ast::NSID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -125,6 +130,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::VarID>
 {
     static void call(Out& out, saya::ika::ast::VarID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -134,6 +140,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::FuncID>
 {
     static void call(Out& out, saya::ika::ast::FuncID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -143,6 +150,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::MacroID
 {
     static void call(Out& out, saya::ika::ast::MacroID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -152,6 +160,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::GroupID
 {
     static void call(Out& out, saya::ika::ast::GroupID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -161,6 +170,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Endpoin
 {
     static void call(Out& out, saya::ika::ast::EndpointID const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -170,6 +180,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::UOp<say
 {
     static void call(Out& out, saya::ika::ast::UOp<saya::ika::ast::ops::FuncCall> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -179,6 +190,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::UOp<say
 {
     static void call(Out& out, saya::ika::ast::UOp<saya::ika::ast::ops::MacroCall> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -188,6 +200,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::UOp<say
 {
     static void call(Out& out, saya::ika::ast::UOp<saya::ika::ast::ops::Not> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -197,6 +210,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::UOp<say
 {
     static void call(Out& out, saya::ika::ast::UOp<saya::ika::ast::ops::AddFamily> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -206,6 +220,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::BOp<say
 {
     static void call(Out& out, saya::ika::ast::BOp<saya::ika::ast::ops::Pow> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -215,6 +230,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::BOp<say
 {
     static void call(Out& out, saya::ika::ast::BOp<saya::ika::ast::ops::MulFamily> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -224,6 +240,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::BOp<say
 {
     static void call(Out& out, saya::ika::ast::BOp<saya::ika::ast::ops::AddFamily> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -233,6 +250,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::BOp<say
 {
     static void call(Out& out, saya::ika::ast::BOp<saya::ika::ast::ops::Assign> const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -242,6 +260,7 @@ struct boost::spirit::traits::print_attribute_debug<Out, T, typename std::enable
 {
     static void call(Out& out, T const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
     }
 };
@@ -251,17 +270,9 @@ struct boost::spirit::traits::print_attribute_debug<Out, T*, typename std::enabl
 {
     static void call(Out& out, T const* val)
     {
+        using ::saya::ika::ast::io::operator<<;
         BOOST_ASSERT(val);
         out << *val;
-    }
-};
-
-template<class Out>
-struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Stmt>
-{
-    static void call(Out& out, saya::ika::ast::Stmt const& val)
-    {
-        out << val;
     }
 };
 
@@ -270,7 +281,46 @@ struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Declara
 {
     static void call(Out& out, saya::ika::ast::Declaration const& val)
     {
+        using ::saya::ika::ast::io::operator<<;
         out << val;
+    }
+};
+
+template<class Out>
+struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Stmt>
+{
+    static void call(Out& out, saya::ika::ast::Stmt const& val)
+    {
+        using ::saya::ika::ast::io::operator<<;
+        out << val;
+    }
+};
+
+template<class Out>
+struct boost::spirit::traits::print_attribute_debug<Out, saya::ika::ast::Root*>
+{
+    static void call(Out& out, saya::ika::ast::Root const* val)
+    {
+        using ::saya::ika::ast::io::operator<<;
+        if (val) {
+            out << saya::console::color::fg::BLUE() << saya::console::color::BOLD() << "Context" << saya::console::color::RESET();
+        } else {
+            out << "(invalid_root_ctx)";
+        }
+    }
+};
+
+template<class Out>
+struct boost::spirit::traits::print_attribute_debug<Out, std::unique_ptr<saya::ika::ast::Root>>
+{
+    static void call(Out& out, std::unique_ptr<saya::ika::ast::Root> const& val)
+    {
+        using ::saya::ika::ast::io::operator<<;
+        if (val) {
+            boost::spirit::traits::print_attribute(out, *val);
+        } else {
+            out << "(invalid_unique_ptr)";
+        }
     }
 };
 

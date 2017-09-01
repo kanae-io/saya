@@ -1,1 +1,4 @@
-add_subdirectory(ika)
+if (SAYA_ENABLE_IKA)
+  add_subdirectory(ika)
+endif()
+

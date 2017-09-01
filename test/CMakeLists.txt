@@ -1,4 +1,3 @@
-set(SAYA_TEST_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 include("${PROJECT_SOURCE_DIR}/cmake/saya-test-generator.cmake")
 
 set(test_flags "SAYA_TESTING=1;UNISTR_FROM_STRING_EXPLICIT=explicit")
@@ -7,7 +6,7 @@ set(include_dirs "")
 list(
   APPEND include_dirs
   "${PROJECT_SOURCE_DIR}/include"
-  "${SAYA_TEST_ROOT}/include"
+  "include"
 )
 set(system_include_dirs "")
 list(
@@ -30,7 +29,7 @@ saya_enable_gtest(
 macro(resolve_tests files)
   set(tests "")
   foreach(f IN ITEMS "${files}")
-    list(APPEND tests "${SAYA_TEST_ROOT}/${f}_test.cpp")
+    list(APPEND tests "${f}_test.cpp")
   endforeach()
 endmacro()
 
@@ -48,22 +47,3 @@ set(
 )
 
 saya_generate_tests("${SAYA_GTEST_ROOT}" "${tests}" "${include_dirs}" "${system_include_dirs}" "${libs}" "${test_flags}")
-
-# ---------------------------------------------
-
-resolve_tests(
-  "ika/ast/ika_ast_geo"
-)
-
-set(
-  libs
-  saya_ika_grammar
-  saya
-  ${Boost_LIBRARIES}
-  ${ICU_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-)
-
-saya_generate_tests("${SAYA_GTEST_ROOT}" "${tests}" "${include_dirs}" "${system_include_dirs}" "${libs}" "${test_flags}")
-

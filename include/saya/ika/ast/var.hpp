@@ -21,24 +21,6 @@ struct Var : ASTEntity
     {}
 };
 
-inline std::ostream& operator<<(std::ostream& os, Var const& v)
-{
-    return debug::with(
-        os,
-        "Var",
-        debug::kv("id", debug::id_arg(*v.id.get()))
-    );
-}
-
-inline std::ostream& operator<<(std::ostream& os, Var const* v)
-{
-    return debug::proxy(
-        os,
-        "Var",
-        v
-    );
-}
-
 }}} // saya
 
 #endif

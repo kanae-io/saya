@@ -15,6 +15,7 @@ class bridge final : public saya::bridge<bridge>
 public:
     #undef SAYA_BRIDGE_OPTION_GROUP
     #define SAYA_BRIDGE_OPTION_GROUP (compiler, "Compiler options")
+    SAYA_BRIDGE_OPTION_DEFAULTED(boost::filesystem::path, ikastd_root, "/usr/local/ika", "ikastd", "Ika standard library prefix [/usr/local/ika]")
     SAYA_BRIDGE_OPTION_EXISTENCE(fsyntax_only, "fsyntax-only", "Perform syntax check only")
     #undef SAYA_BRIDGE_OPTION_GROUP
 
@@ -37,6 +38,11 @@ public:
         "Input files"
     )
 
+    boost::filesystem::path ikastd() const
+    {
+        return ikastd_root() / "ikastd";
+    }
+
 protected:
     virtual void validate(base_type::vm_type const& vm) override
     {
@@ -50,6 +56,10 @@ protected:
                 }
             }
         };
+
+        if (!(boost::filesystem::exists(ikastd()) && boost::filesystem::is_directory(ikastd()))) {
+            throw validation_error("Ika standard library not available in \"" + ikastd().string() + "\" - check [--ikastd]");
+        }
 
         only_if("optimization-level", [this] (auto const&) {
             if (O_ != 2) return false;

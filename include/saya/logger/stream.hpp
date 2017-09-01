@@ -20,9 +20,9 @@ template<class Logger>
 class logger_access
 {
 protected:
-    static inline auto& out(Logger* logger) noexcept { return logger->out_; }
+    static inline auto& out(Logger* logger) noexcept { return logger->env_.out; }
 
-    static inline auto& err(Logger* logger) noexcept { return logger->err_; }
+    static inline auto& err(Logger* logger) noexcept { return logger->env_.err; }
 
     static inline auto& select_stream(Logger* logger, logger_level::INFO) noexcept
     {
@@ -60,10 +60,12 @@ protected:
         using format_type = boost::basic_format<typename Logger::char_type>;
         using level_traits_type = typename traits_type::template level_traits_type<Level>;
 
-        std::unique_lock<typename Logger::mutex_type> lock(logger->prompt_mtx_);
-        auto const& prompt = logger->prompt_;
-
         if (frag.empty()) return {};
+
+        std::unique_lock<typename Logger::mutex_type> lock(logger->prompt_mtx_);
+        auto const prompt = logger->prompt_;
+        auto const need_color = logger->env_.need_color;
+        lock.unlock();
 
         auto const eol = frag.find('\n');
 
@@ -74,7 +76,7 @@ protected:
             }
         }
 
-        boost::algorithm::trim(frag);
+        boost::algorithm::trim_right(frag);
         frag += '\n';
 
         // 'note: '
@@ -82,7 +84,7 @@ protected:
             typename Logger::string_type const INDENT(traits_type::indent_magic(prompt), ' ');
             typename Logger::string_type const PADDING(traits_type::max_label_width() + 2 - level_traits_type::label_len(), ' ');
 
-            if (logger->color_.load(std::memory_order_acquire)) {
+            if (need_color) {
                 return boost::str(format_type(traits_type::note_format())
                     % INDENT
                     % level_traits_type::template color<color_type>()
@@ -102,9 +104,7 @@ protected:
 
         // INFO, WARN, ERROR
         if (prompt.empty()) {
-            lock.unlock();
-
-            if (logger->color_.load(std::memory_order_acquire)) {
+            if (need_color) {
                 typename Logger::string_type const PADDING(traits_type::max_label_width() - level_traits_type::label_len(), ' ');
 
                 return boost::str(format_type(traits_type::noprompt_format())
@@ -124,7 +124,7 @@ protected:
         } else {
             typename Logger::string_type const PADDING(traits_type::max_label_width() - level_traits_type::label_len(), ' ');
 
-            if (logger->color_.load(std::memory_order_acquire)) {
+            if (need_color) {
                 return boost::str(format_type(traits_type::prompt_format())
                     % (logger->prompt_color_ ? logger->prompt_color_ : "")
                     % prompt

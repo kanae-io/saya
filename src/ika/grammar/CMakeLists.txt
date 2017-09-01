@@ -1,4 +1,4 @@
-add_library(saya_ika_grammar STATIC "to_ast.cpp")
+add_library(saya_ika_grammar STATIC "to_ast.cpp" "to_html.cpp")
 
 set(defs
   "BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS"

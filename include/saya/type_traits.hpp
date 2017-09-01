@@ -13,6 +13,10 @@ template<BOOST_VARIANT_ENUM_PARAMS(class T)>
 struct is_variant<boost::variant<BOOST_VARIANT_ENUM_PARAMS(T)>>
     : std::true_type {};
 
+template<class T>
+static constexpr bool
+is_variant_v = is_variant<T>::value;
+
 } // saya
 
 #endif
