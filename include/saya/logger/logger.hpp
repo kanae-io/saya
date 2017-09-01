@@ -96,13 +96,19 @@ public:
         prompt_color_ = color_code;
     }
 
+    bool color() const
+    {
+        lock_type lock(prompt_mtx_);
+        return env_.need_color;
+    }
+
     void color(bool flag) const
     {
         lock_type lock(prompt_mtx_);
         env_.need_color = flag;
     }
 
-    env_type env() const { return env_; }
+    env_type const& env() const { return env_; }
 
 protected:
     mutable mutex_type prompt_mtx_;
