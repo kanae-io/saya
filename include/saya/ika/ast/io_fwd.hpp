@@ -8,6 +8,9 @@
 
 #include <boost/variant/static_visitor.hpp>
 
+#include <boost/fusion/include/std_pair.hpp>
+#include <boost/fusion/include/io.hpp>
+
 #include <boost/preprocessor/seq/size.hpp>
 #include <boost/preprocessor/seq/elem.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -91,13 +94,16 @@ BOOST_PP_REPEAT(BOOST_PP_SEQ_SIZE(SAYA_IKA_VM_LIT_TYPEMAP_NAMEONLY), SAYA_DEF, S
 
 struct variant_printer : boost::static_visitor<std::ostream&>
 {
+public:
     explicit variant_printer(std::ostream& os)
         : os_(os)
     {}
 
+
     template<class T, std::enable_if_t<!saya::is_variant_v<T>, int> = 0>
     std::ostream& operator()(T const& v) const
     {
+        using namespace boost::fusion::operators;
         using ::saya::ika::ast::io::operator<<;
         return os_ << v;
     }
@@ -105,6 +111,7 @@ struct variant_printer : boost::static_visitor<std::ostream&>
     template<class T, std::enable_if_t<saya::is_variant_v<T>, int> = 0>
     std::ostream& operator()(T const& v) const
     {
+        using namespace boost::fusion::operators;
         using ::saya::ika::ast::io::operator<<;
         return boost::apply_visitor(*this, v);
     }
