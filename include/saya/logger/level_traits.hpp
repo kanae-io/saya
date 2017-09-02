@@ -12,7 +12,6 @@ namespace saya {
     template<> \
     struct basic_logger_level_traits<CHAR_TYPE, logger_level::INFO> \
     { \
-        static constexpr bool need_indent() noexcept { return false; } \
         static constexpr std::size_t label_len() noexcept { return 4; } \
         static CHAR_TYPE const* label() noexcept { return BINDER("INFO"); } \
         static constexpr bool need_paren() noexcept { return true; } \
@@ -23,7 +22,6 @@ namespace saya {
     template<> \
     struct basic_logger_level_traits<CHAR_TYPE, logger_level::WARN> \
     { \
-        static constexpr bool need_indent() noexcept { return false; } \
         static constexpr std::size_t label_len() noexcept { return 4; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("WARN"); } \
         static constexpr bool need_paren() noexcept { return true; } \
@@ -34,7 +32,6 @@ namespace saya {
     template<> \
     struct basic_logger_level_traits<CHAR_TYPE, logger_level::ERROR> \
     { \
-        static constexpr bool need_indent() noexcept { return false; } \
         static constexpr std::size_t label_len() noexcept { return 5; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("ERROR"); } \
         static constexpr bool need_paren() noexcept { return true; } \
@@ -45,7 +42,6 @@ namespace saya {
     template<> \
     struct basic_logger_level_traits<CHAR_TYPE, logger_level::NOTE> \
     { \
-        static constexpr bool need_indent() noexcept { return true; } \
         static constexpr std::size_t label_len() noexcept { return 5; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("note:"); } \
         static constexpr bool need_paren() noexcept { return false; } \

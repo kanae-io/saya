@@ -31,20 +31,23 @@ namespace saya {
         static constexpr std::size_t max_label_width() noexcept { \
             return std::max(std::max(level_traits_type<logger_level::INFO>::label_len(), level_traits_type<logger_level::WARN>::label_len()), level_traits_type<logger_level::ERROR>::label_len()); \
         } \
-        static std::size_t indent_magic(string_type const& prompt) noexcept { \
-            return prompt.empty() ? (max_label_width() - level_traits_type<logger_level::NOTE>::label_len()) : (1 + prompt.size() + 1 + 1 + max_label_width() - level_traits_type<logger_level::NOTE>::label_len()); \
+        static std::size_t max_prompt_len(string_type const& prompt) noexcept { \
+            return prompt.empty() ? (max_label_width()) : (prompt.size() + 1 + 1 + 1 + max_label_width()); \
+        } \
+        static std::size_t note_indent_w(string_type const& prompt) noexcept { \
+            return max_prompt_len(prompt) - level_traits_type<logger_level::NOTE>::label_len(); \
         } \
         \
-        static constexpr char_type const* prompt_format() noexcept { return BINDER("%s[%s]%s %s%s%s %s"); } \
+        static constexpr char_type const* prompt_format() noexcept { return BINDER("%s[%s]%s %s%s%s %s%s"); } \
         template<class Level> \
-        static constexpr char_type const* prompt_no_color_format() noexcept { return level_traits_type<Level>::need_paren() ? BINDER("[%s] (%s) %s") : BINDER("[%s] %s %s"); } \
+        static constexpr char_type const* prompt_no_color_format() noexcept { return level_traits_type<Level>::need_paren() ? BINDER("[%s] (%s) %s%s") : BINDER("[%s] %s %s%s"); } \
         \
-        static constexpr char_type const* noprompt_format() noexcept { return BINDER("%s%s%s %s"); } \
+        static constexpr char_type const* noprompt_format() noexcept { return BINDER("%s%s%s %s%s"); } \
         template<class Level> \
-        static constexpr char_type const* noprompt_no_color_format() noexcept { return level_traits_type<Level>::need_paren() ? BINDER("(%s) %s") : BINDER("%s %s"); } \
+        static constexpr char_type const* noprompt_no_color_format() noexcept { return level_traits_type<Level>::need_paren() ? BINDER("(%s) %s%s") : BINDER("%s %s%s"); } \
         \
-        static constexpr char_type const* note_format() noexcept { return BINDER("%s%s%s%s %s"); } \
-        static constexpr char_type const* note_no_color_format() noexcept { return BINDER("%s%s %s"); } \
+        static constexpr char_type const* note_format() noexcept { return BINDER("%c%s%s%s %s\n"); } \
+        static constexpr char_type const* note_no_color_format() noexcept { return BINDER("%s %s\n"); } \
     };
 
 SAYA_STRING_CONFIG_DEFINE(SAYA_DEF)

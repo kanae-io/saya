@@ -37,7 +37,7 @@ public:
     using mutex_type = std::mutex;
     using lock_type = std::lock_guard<mutex_type>;
     using note_type = logger_stream_type<logger_level::NOTE>;
-    using notes_type = std::deque<std::unique_ptr<note_type>>;
+    using notes_type = std::deque<note_type>;
 
     explicit basic_logger(string_type const& prompt = {})
         : prompt_(prompt)
@@ -80,8 +80,8 @@ public:
     note() const
     {
         lock_type lock(note_mtx_);
-        notes_.emplace_back(std::make_unique<note_type>(const_cast<self_type*>(this)));
-        return *const_cast<note_type*>(notes_.back().get());
+        notes_.emplace_back();
+        return const_cast<note_type&>(notes_.back());
     }
 
     void prompt(string_type const& name) const
