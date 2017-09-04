@@ -48,7 +48,7 @@ find_package(OpenSSL REQUIRED)
 
 # ---------------------------------------------
 
-set(SAYA_DEFAULT_BOOST_VERSION "1.65.0")
+set(SAYA_DEFAULT_BOOST_VERSION "1.65.1")
 message(STATUS "Boost sanity check...")
 
 if(NOT BOOST_ROOT)
