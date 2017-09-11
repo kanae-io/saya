@@ -66,7 +66,7 @@ You must ensure your application is configured properly before deploying to a cl
 - _Other linux: Untested, should work_
 - _macOS: Untested, should work_
 - _*BSD: Not supported._
-- _Windows: Not supported._
+- Windows 10: VS 2017, 64bit
 
 ### C++ Version
 
