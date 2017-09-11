@@ -169,12 +169,10 @@ public:
     using buf_type = basic_syncbuf<char_type>;
 
     /*explicit*/ basic_logger_stream_impl(logger_type* logger)
-        : ostream_type()
-        , buf_(access_type::select_stream(logger, Level{}))
+        : buf_(access_type::select_stream(logger, Level{}))
+        , ostream_type(&buf_)
         , logger_(logger)
-    {
-        this->init(&buf_);
-    }
+    {}
 
     virtual ~basic_logger_stream_impl() = default;
 

@@ -14,9 +14,10 @@ class logger_access;
 
 namespace logger_level {
 
-struct INFO;
-struct WARN;
-struct ERROR;
+struct INFO {};
+struct WARN {};
+struct ERROR {};
+struct NOTE {};
 
 } // logger_level
 

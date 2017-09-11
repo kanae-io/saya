@@ -9,6 +9,8 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/expand.hpp>
 #include <boost/preprocessor/stringize.hpp>
+#include <boost/preprocessor/repeat.hpp>
+#include <boost/preprocessor/arithmetic/add.hpp>
 
 #include <iostream>
 #include <string>
@@ -54,9 +56,6 @@ namespace saya { namespace console {
 
 #define SAYA_COLOR_TAG_COLOR \
     (DEFAULT)(BLACK)(RED)(GREEN)(YELLOW)(BLUE)(MAGENTA)(CYAN)(LIGHTGRAY)(DARKGRAY)(LIGHTRED)(LIGHTGREEN)(LIGHTYELLOW)(LIGHTBLUE)(LIGHTMAGENTA)(LIGHTCYAN)(WHITE)
-
-#define SAYA_COLOR_TAG_256 \
-    (1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)(12)(13)(14)(15)(16)(17)(18)(19)(20)(21)(22)(23)(24)(25)(26)(27)(28)(29)(30)(31)(32)(33)(34)(35)(36)(37)(38)(39)(40)(41)(42)(43)(44)(45)(46)(47)(48)(49)(50)(51)(52)(53)(54)(55)(56)(57)(58)(59)(60)(61)(62)(63)(64)(65)(66)(67)(68)(69)(70)(71)(72)(73)(74)(75)(76)(77)(78)(79)(80)(81)(82)(83)(84)(85)(86)(87)(88)(89)(90)(91)(92)(93)(94)(95)(96)(97)(98)(99)(100)(101)(102)(103)(104)(105)(106)(107)(108)(109)(110)(111)(112)(113)(114)(115)(116)(117)(118)(119)(120)(121)(122)(123)(124)(125)(126)(127)(128)(129)(130)(131)(132)(133)(134)(135)(136)(137)(138)(139)(140)(141)(142)(143)(144)(145)(146)(147)(148)(149)(150)(151)(152)(153)(154)(155)(156)(157)(158)(159)(160)(161)(162)(163)(164)(165)(166)(167)(168)(169)(170)(171)(172)(173)(174)(175)(176)(177)(178)(179)(180)(181)(182)(183)(184)(185)(186)(187)(188)(189)(190)(191)(192)(193)(194)(195)(196)(197)(198)(199)(200)(201)(202)(203)(204)(205)(206)(207)(208)(209)(210)(211)(212)(213)(214)(215)(216)(217)(218)(219)(220)(221)(222)(223)(224)(225)(226)(227)(228)(229)(230)(231)(232)(233)(234)(235)(236)(237)(238)(239)(240)(241)(242)(243)(244)(245)(246)(247)(248)(249)(250)(251)(252)(253)(254)(255)(256)
 
 #define SAYA_COLOR_RESET               0
 
@@ -137,18 +136,21 @@ namespace saya { namespace console {
         ; \
     }
 
-#define SAYA_COLOR_256_DEF(r, cfg, c256) \
-    static constexpr BOOST_PP_TUPLE_ELEM(0, cfg) const* BOOST_PP_CAT(code, c256)() noexcept { \
+#define SAYA_DEF_I_FOR(cfg, i) \
+    BOOST_PP_ADD(BOOST_PP_TUPLE_ELEM(0, cfg), i)
+
+#define SAYA_COLOR_256_DEF(z, i, cfg) \
+    static constexpr BOOST_PP_TUPLE_ELEM(1, cfg) const* BOOST_PP_CAT(code, SAYA_DEF_I_FOR(cfg, i))() noexcept { \
         return \
-            BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_PREFIX) \
-            BOOST_PP_TUPLE_ELEM(1, cfg)( \
+            BOOST_PP_TUPLE_ELEM(2, cfg)(SAYA_CODE_PREFIX) \
+            BOOST_PP_TUPLE_ELEM(2, cfg)( \
                 BOOST_PP_STRINGIZE( \
-                    BOOST_PP_CAT(BOOST_PP_CAT(SAYA_COLOR_256_, BOOST_PP_TUPLE_ELEM(2, cfg)), _ID) \
+                    BOOST_PP_CAT(BOOST_PP_CAT(SAYA_COLOR_256_, BOOST_PP_TUPLE_ELEM(3, cfg)), _ID) \
                 ) \
             ) \
-            BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_256_SEP) \
-            BOOST_PP_TUPLE_ELEM(1, cfg)(BOOST_PP_STRINGIZE(c256)) \
-            BOOST_PP_TUPLE_ELEM(1, cfg)(SAYA_CODE_SUFFIX) \
+            BOOST_PP_TUPLE_ELEM(2, cfg)(SAYA_CODE_256_SEP) \
+            BOOST_PP_TUPLE_ELEM(2, cfg)(BOOST_PP_STRINGIZE(SAYA_DEF_I_FOR(cfg, i))) \
+            BOOST_PP_TUPLE_ELEM(2, cfg)(SAYA_CODE_SUFFIX) \
         ; \
     }
 
@@ -160,11 +162,11 @@ namespace saya { namespace console {
         \
         struct fg { \
             BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_COLOR_DEF, (CHAR_TYPE, BINDER, fg), SAYA_COLOR_TAG_COLOR) \
-            BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_256_DEF, (CHAR_TYPE, BINDER, fg), SAYA_COLOR_TAG_256) \
+            BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (0, CHAR_TYPE, BINDER, fg)) \
         }; \
         struct bg { \
             BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_COLOR_DEF, (CHAR_TYPE, BINDER, bg), SAYA_COLOR_TAG_COLOR) \
-            BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_256_DEF, (CHAR_TYPE, BINDER, bg), SAYA_COLOR_TAG_256) \
+            BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (0, CHAR_TYPE, BINDER, bg)) \
         }; \
     };
 
@@ -182,8 +184,8 @@ SAYA_STRING_CONFIG_DEFINE(SAYA_DEF)
 #define SAYA_COLOR_COLOR_DEF(r, _, color) \
     static constexpr detail::no_color_t color() noexcept { return {}; }
 
-#define SAYA_COLOR_256_DEF(r, _, c256) \
-    static constexpr detail::no_color_t BOOST_PP_CAT(code, c256)() noexcept { return {}; }
+#define SAYA_COLOR_256_DEF(z, i, cfg) \
+    static constexpr detail::no_color_t BOOST_PP_CAT(code, SAYA_DEF_I_FOR(cfg, i))() noexcept { return {}; }
 
 template<>
 struct basic_color<void>
@@ -192,11 +194,13 @@ struct basic_color<void>
 
     struct fg {
         BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_COLOR_DEF, _, SAYA_COLOR_TAG_COLOR)
-        BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_256_DEF, _, SAYA_COLOR_TAG_256)
+        BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (0))
+        BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (127))
     };
     struct bg {
         BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_COLOR_DEF, _, SAYA_COLOR_TAG_COLOR)
-        BOOST_PP_SEQ_FOR_EACH(SAYA_COLOR_256_DEF, _, SAYA_COLOR_TAG_256)
+        BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (0))
+        BOOST_PP_REPEAT(127, SAYA_COLOR_256_DEF, (127))
     };
 };
 
@@ -249,17 +253,17 @@ inline static void list_colors()
 
     std::cout << "\n\n[fg - 256] saya::console::fg::codeN(); ------------------------\n";
     #undef SAYA_DEF
-    #define SAYA_DEF(r, _, c) \
-        std::cout << basic_color<char>::fg::BOOST_PP_CAT(code, c)() << expand5(c) << basic_color<char>::RESET() << " "; \
-        if (c % 8 == 0) std::cout << "\n";
-    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_256)
+    #define SAYA_DEF(z, i, _) \
+        std::cout << basic_color<char>::fg::BOOST_PP_CAT(code, i)() << expand5(i) << basic_color<char>::RESET() << " "; \
+        if (i % 8 == 0) std::cout << "\n";
+    BOOST_PP_REPEAT(127, SAYA_DEF, _)
 
     std::cout << "\n\n[bg - 256] saya::console::bg::codeN(); ------------------------\n";
     #undef SAYA_DEF
-    #define SAYA_DEF(r, _, c) \
-        std::cout << basic_color<char>::bg::BOOST_PP_CAT(code, c)() << expand5(c) << basic_color<char>::RESET() << " "; \
-        if (c % 8 == 0) std::cout << "\n";
-    BOOST_PP_SEQ_FOR_EACH(SAYA_DEF, _, SAYA_COLOR_TAG_256)
+    #define SAYA_DEF(z, i, _) \
+        std::cout << basic_color<char>::bg::BOOST_PP_CAT(code, i)() << expand5(i) << basic_color<char>::RESET() << " "; \
+        if (i % 8 == 0) std::cout << "\n";
+    BOOST_PP_REPEAT(127, SAYA_DEF, _)
 
     std::cout << std::endl;
 }
@@ -332,6 +336,7 @@ inline static void list_colors()
 #undef SAYA_COLOR_bg_LIGHTCYAN
 #undef SAYA_COLOR_bg_WHITE
 
+#undef SAYA_DEF_I_FOR
 #undef SAYA_DEF
 
 }} // saya
