@@ -70,18 +70,18 @@ You must ensure your application is configured properly before deploying to a cl
 
 ### C++ Version
 
-- C++14
-- C++1z is tentatively turned off because current version of Boost does not support `clang++` on `-std=c++1z`
+- C++17
+- C++14 (deprecated)
 
 ### Toolchain
 
-- [clang++](http://clang.llvm.org/cxx_status.html) >= 4.0.1 ([Ubuntu repo](http://apt.llvm.org/)) or
+- [clang++](http://clang.llvm.org/cxx_status.html) >= 6 ([Ubuntu repo](http://apt.llvm.org/)) or
 - [g++](https://gcc.gnu.org/projects/cxx-status.html) >= 7.1.0 ([Ubuntu repo](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test))
-- [CMake](http://www.cmake.org/) >= 3.5
+- [CMake](http://www.cmake.org/) >= 3.8
 
 ### Library
 
-- [Boost C++ Libraries](http://www.boost.org/) >= 1.65.0 beta1
+- [Boost C++ Libraries](http://www.boost.org/) >= 1.65.1
 
 ---
 
