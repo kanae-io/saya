@@ -15,6 +15,10 @@
 #include <iostream>
 #include <string>
 
+#if BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4127)
+#endif
 
 namespace saya { namespace console { namespace detail {
 
@@ -340,5 +344,9 @@ inline static void list_colors()
 #undef SAYA_DEF
 
 }} // saya
+
+#if BOOST_MSVC
+#pragma warning(pop)
+#endif
 
 #endif

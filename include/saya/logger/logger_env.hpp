@@ -22,23 +22,13 @@ struct basic_logger_env
     basic_logger_env(basic_logger_env const&) = default;
     basic_logger_env(basic_logger_env&&) = default;
 
-    explicit basic_logger_env(std::ostream& out_, std::ostream& err_, bool need_color = true)
-        : out(out_.rdbuf())
-        , err(err_.rdbuf())
+    explicit basic_logger_env(std::streambuf* out_, std::streambuf* err_, bool need_color = true)
+        : out(out_)
+        , err(err_)
         , need_color(need_color)
     {}
 
-    explicit basic_logger_env(std::ostream& all, bool need_color = true)
-        : basic_logger_env(all, all, need_color)
-    {}
-
-    explicit basic_logger_env(std::ofstream& out_, std::ofstream& err_, bool need_color = false)
-        : out(out_.rdbuf())
-        , err(err_.rdbuf())
-        , need_color(need_color)
-    {}
-
-    explicit basic_logger_env(std::ofstream& all, bool need_color = true)
+    explicit basic_logger_env(std::streambuf* all, bool need_color = true)
         : basic_logger_env(all, all, need_color)
     {}
 

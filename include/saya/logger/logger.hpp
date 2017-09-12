@@ -57,7 +57,7 @@ public:
     {}
 
 
-    basic_logger(basic_logger const&) = delete;
+    //basic_logger(basic_logger const&) = delete;
     basic_logger(basic_logger&&) = delete;
 
     basic_logger& operator=(basic_logger const&) = delete;
