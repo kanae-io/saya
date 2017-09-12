@@ -72,7 +72,7 @@ public:
     {
         if (!sbp_) return;
 
-        auto const len = this->showmanyc();
+        auto const len = this->in_avail();
         stream_lock::lock_type lock(*mptr_);
 
         if (len > 0) {

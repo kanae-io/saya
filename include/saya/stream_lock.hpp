@@ -55,7 +55,7 @@ public:
         BOOST_ASSERT(it != mmap_().end());
 
         // should we do this here, or leave it to the caller?
-        mp.reset();
+        // mp.reset();
 
         if (it->second.expired()) {
             mmap_().erase(it);
