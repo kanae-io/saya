@@ -36,12 +36,11 @@ public:
 
     using mutex_type = std::mutex;
     using lock_type = std::lock_guard<mutex_type>;
-    using note_type = logger_stream_type<logger_level::NOTE>;
+    using note_type = logger_stream_type<logger_level::note>;
     using notes_type = std::deque<note_type>;
 
     explicit basic_logger(string_type const& prompt = {})
         : prompt_(prompt)
-        , env_()
     {}
 
     explicit basic_logger(
@@ -49,11 +48,12 @@ public:
         string_type const& prompt = {}
     )
         : prompt_(prompt)
-        , env_(std::move(env))
-    {}
+    {
+        envs_.emplace_back(std::move(env));
+    }
 
     explicit basic_logger(basic_logger const& other, string_type const& prompt = {})
-        : basic_logger(other.env_, prompt)
+        : basic_logger(other.envs_, prompt)
     {}
 
 
@@ -66,13 +66,13 @@ public:
     ~basic_logger() = default;
 
 
-    logger_stream_type<logger_level::INFO>
+    logger_stream_type<logger_level::info>
     info() const { return {const_cast<self_type*>(this)}; }
 
-    logger_stream_type<logger_level::WARN>
+    logger_stream_type<logger_level::warn>
     warn() const { return {const_cast<self_type*>(this)}; }
 
-    logger_stream_type<logger_level::ERROR>
+    logger_stream_type<logger_level::error>
     error() const { return {const_cast<self_type*>(this)}; }
 
     // 'extra' output for in addition to all types above
@@ -82,6 +82,11 @@ public:
         lock_type lock(note_mtx_);
         notes_.emplace_back();
         return const_cast<note_type&>(notes_.back());
+    }
+
+    void tee(env_type another_env)
+    {
+        envs_.emplace_back(std::move(another_env));
     }
 
     void prompt(string_type const& name) const
@@ -96,19 +101,7 @@ public:
         prompt_color_ = color_code;
     }
 
-    bool color() const
-    {
-        lock_type lock(prompt_mtx_);
-        return env_.need_color;
-    }
-
-    void color(bool flag) const
-    {
-        lock_type lock(prompt_mtx_);
-        env_.need_color = flag;
-    }
-
-    env_type const& env() const { return env_; }
+    env_type const& env() const { return envs_.front(); }
 
 protected:
     mutable mutex_type prompt_mtx_;
@@ -118,7 +111,7 @@ protected:
 
     mutable notes_type notes_;
 
-    mutable env_type env_;
+    mutable std::deque<env_type> envs_;
 };
 
 } // saya

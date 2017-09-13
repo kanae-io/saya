@@ -29,13 +29,13 @@ namespace saya {
         using level_traits_type = basic_logger_level_traits<char_type, Level>; \
         \
         static constexpr std::size_t max_label_width() noexcept { \
-            return std::max(std::max(level_traits_type<logger_level::INFO>::label_len(), level_traits_type<logger_level::WARN>::label_len()), level_traits_type<logger_level::ERROR>::label_len()); \
+            return std::max(std::max(level_traits_type<logger_level::info>::label_len(), level_traits_type<logger_level::warn>::label_len()), level_traits_type<logger_level::error>::label_len()); \
         } \
         static std::size_t max_prompt_len(string_type const& prompt) noexcept { \
             return prompt.empty() ? (max_label_width()) : (prompt.size() + 1 + 1 + 1 + max_label_width()); \
         } \
         static std::size_t note_indent_w(string_type const& prompt) noexcept { \
-            return max_prompt_len(prompt) - level_traits_type<logger_level::NOTE>::label_len(); \
+            return max_prompt_len(prompt) - level_traits_type<logger_level::note>::label_len(); \
         } \
         \
         static constexpr char_type const* prompt_format() noexcept { return BINDER("%s[%s]%s %s%s%s %s%s"); } \

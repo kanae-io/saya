@@ -10,7 +10,7 @@ namespace saya {
 
 #define SAYA_DEF(CHAR_TYPE, BINDER) \
     template<> \
-    struct basic_logger_level_traits<CHAR_TYPE, logger_level::INFO> \
+    struct basic_logger_level_traits<CHAR_TYPE, logger_level::info> \
     { \
         static constexpr std::size_t label_len() noexcept { return 4; } \
         static CHAR_TYPE const* label() noexcept { return BINDER("INFO"); } \
@@ -20,7 +20,7 @@ namespace saya {
         static auto color() { return std::basic_string<CHAR_TYPE>(Color::bg::DARKGRAY()) + Color::fg::WHITE(); } \
     }; \
     template<> \
-    struct basic_logger_level_traits<CHAR_TYPE, logger_level::WARN> \
+    struct basic_logger_level_traits<CHAR_TYPE, logger_level::warn> \
     { \
         static constexpr std::size_t label_len() noexcept { return 4; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("WARN"); } \
@@ -30,7 +30,7 @@ namespace saya {
         static auto color() { return std::basic_string<CHAR_TYPE>(Color::bg::YELLOW()) + Color::fg::BLACK(); } \
     }; \
     template<> \
-    struct basic_logger_level_traits<CHAR_TYPE, logger_level::ERROR> \
+    struct basic_logger_level_traits<CHAR_TYPE, logger_level::error> \
     { \
         static constexpr std::size_t label_len() noexcept { return 5; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("ERROR"); } \
@@ -40,7 +40,7 @@ namespace saya {
         static auto color() { return std::basic_string<CHAR_TYPE>(Color::bg::RED()) + Color::fg::WHITE(); } \
     }; \
     template<> \
-    struct basic_logger_level_traits<CHAR_TYPE, logger_level::NOTE> \
+    struct basic_logger_level_traits<CHAR_TYPE, logger_level::note> \
     { \
         static constexpr std::size_t label_len() noexcept { return 5; } \
         static constexpr CHAR_TYPE const* label() noexcept { return BINDER("note:"); } \

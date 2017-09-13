@@ -6,6 +6,7 @@
 #include "saya/logger/level_traits.hpp"
 #include "saya/syncstream.hpp"
 
+#include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -21,29 +22,17 @@ namespace saya {
 namespace detail {
 
 template<class Logger>
+struct finalized_buffer
+{
+    using string_type = typename Logger::string_type;
+    string_type with_color, without_color;
+};
+
+template<class Logger>
 class logger_access
 {
 protected:
-    static inline auto& out(Logger* logger) noexcept { return logger->env_.out; }
-
-    static inline auto& err(Logger* logger) noexcept { return logger->env_.err; }
-
-    static inline auto& select_stream(Logger* logger, logger_level::INFO) noexcept
-    {
-        return out(logger);
-    }
-    static inline auto& select_stream(Logger* logger, logger_level::WARN) noexcept
-    {
-        return err(logger);
-    }
-    static inline auto& select_stream(Logger* logger, logger_level::ERROR) noexcept
-    {
-        return err(logger);
-    }
-    static inline auto& select_stream(Logger* logger, logger_level::NOTE) noexcept
-    {
-        return err(logger);
-    }
+    static inline auto const& envs(Logger* logger) noexcept { return logger->envs_; }
 
     static inline typename Logger::mutex_type& note_mtx(Logger* logger) noexcept
     {
@@ -56,19 +45,19 @@ protected:
     }
 
     template<class Level, class Notes>
-    static inline typename Logger::string_type
-    format_prompt(Logger* logger, typename Logger::string_type frag, Notes notes) /*noexcept*/
+    static inline void
+    format_prompt(finalized_buffer<Logger>& buf, Logger* logger, typename Logger::string_type frag, Notes const& notes) /*noexcept*/
     {
         using traits_type = typename Logger::traits_type;
         using color_type = typename traits_type::color_type;
         using format_type = boost::basic_format<typename Logger::char_type>;
         using level_traits_type = typename traits_type::template level_traits_type<Level>;
 
-        if (frag.empty()) return {};
+        BOOST_ASSERT(!frag.empty());
+        // if (frag.empty()) return;
 
         std::unique_lock<typename Logger::mutex_type> lock(logger->prompt_mtx_);
         auto const prompt = logger->prompt_;
-        auto const need_color = logger->env_.need_color;
         lock.unlock();
 
         auto const eol = frag.find('\n');
@@ -84,75 +73,66 @@ protected:
         frag += '\n';
 
         // 'note: '
-        typename Logger::string_type notes_buf;
+        finalized_buffer<Logger> notes_buf;
         if (!notes.empty()) {
-            using note_traits = basic_logger_level_traits<typename Logger::char_type, logger_level::NOTE>;
+            using note_traits = basic_logger_level_traits<typename Logger::char_type, logger_level::note>;
 
-            if (need_color) {
-                notes_buf = boost::algorithm::join(notes | boost::adaptors::transformed([&prompt] (auto const& note) {
-                    return boost::str(format_type(traits_type::note_format())
-                        % boost::io::group(std::setw(traits_type::note_indent_w(prompt)), ' ')
-                        % note_traits::template color<color_type>()
-                        % note_traits::label()
-                        % (typename Logger::string_type(color_type::RESET()) + color_type::fg::LIGHTGRAY())
-                        % boost::algorithm::trim_copy(note.str())
-                    );
-                }), "\n");
+            notes_buf.with_color = boost::algorithm::join(notes | boost::adaptors::transformed([&prompt] (auto const& note) {
+                return boost::str(format_type(traits_type::note_format())
+                    % boost::io::group(std::setw(traits_type::note_indent_w(prompt)), ' ')
+                    % note_traits::template color<color_type>()
+                    % note_traits::label()
+                    % (typename Logger::string_type(color_type::RESET()) + color_type::fg::LIGHTGRAY())
+                    % boost::algorithm::trim_copy(note.str())
+                );
+            }), "\n");
 
-            } else {
-                notes_buf = boost::algorithm::join(notes | boost::adaptors::transformed([&prompt] (auto const& note) {
-                    return boost::str(format_type(traits_type::note_no_color_format())
-                        % boost::io::group(std::setw(traits_type::max_prompt_len(prompt) + 2), note_traits::label())
-                        % boost::algorithm::trim_copy(note.str())
-                    );
-                }), "\n");
-            }
-            notes.clear();
+            notes_buf.without_color = boost::algorithm::join(notes | boost::adaptors::transformed([&prompt] (auto const& note) {
+                return boost::str(format_type(traits_type::note_no_color_format())
+                    % boost::io::group(std::setw(traits_type::max_prompt_len(prompt) + 2), note_traits::label())
+                    % boost::algorithm::trim_copy(note.str())
+                );
+            }), "\n");
         }
 
         // INFO, WARN, ERROR
         if (prompt.empty()) {
-            if (need_color) {
-                typename Logger::string_type const PADDING(traits_type::max_label_width() - level_traits_type::label_len(), ' ');
+            typename Logger::string_type const PADDING(traits_type::max_label_width() - level_traits_type::label_len(), ' ');
 
-                return boost::str(format_type(traits_type::noprompt_format())
-                    % level_traits_type::template color<color_type>()
-                    % level_traits_type::label()
-                    % (color_type::RESET() + PADDING)
-                    % frag
-                    % notes_buf
-                );
+            buf.with_color = boost::str(format_type(traits_type::noprompt_format())
+                % level_traits_type::template color<color_type>()
+                % level_traits_type::label()
+                % (color_type::RESET() + PADDING)
+                % frag
+                % notes_buf.with_color
+            );
 
-            } else {
-                return boost::str(format_type(traits_type::template noprompt_no_color_format<Level>())
-                    % level_traits_type::label()
-                    % frag
-                    % notes_buf
-                );
-            }
+            buf.without_color = boost::str(format_type(traits_type::template noprompt_no_color_format<Level>())
+                % level_traits_type::label()
+                % frag
+                % notes_buf.without_color
+            );
 
         } else {
             typename Logger::string_type const PADDING(traits_type::max_label_width() - level_traits_type::label_len(), ' ');
 
-            if (need_color) {
-                return boost::str(format_type(traits_type::prompt_format())
-                    % (logger->prompt_color_ ? logger->prompt_color_ : "")
-                    % prompt
-                    % color_type::RESET()
-                    % level_traits_type::template color<color_type>()
-                    % level_traits_type::label()
-                    % (color_type::RESET() + PADDING)
-                    % frag
-                    % notes_buf
-                );
-            } else {
-                return boost::str(format_type(traits_type::template prompt_no_color_format<Level>())
-                    % prompt
-                    % level_traits_type::label()
-                    % (PADDING + frag)
-                    % notes_buf
-                );
-            }
+            buf.with_color = boost::str(format_type(traits_type::prompt_format())
+                % (logger->prompt_color_ ? logger->prompt_color_ : "")
+                % prompt
+                % color_type::RESET()
+                % level_traits_type::template color<color_type>()
+                % level_traits_type::label()
+                % (color_type::RESET() + PADDING)
+                % frag
+                % notes_buf.with_color
+            );
+
+            buf.without_color = boost::str(format_type(traits_type::template prompt_no_color_format<Level>())
+                % prompt
+                % level_traits_type::label()
+                % (PADDING + frag)
+                % notes_buf.without_color
+            );
         }
     }
 }; // logger_access
@@ -170,7 +150,7 @@ public:
 
     /*explicit*/ basic_logger_stream_impl(logger_type* logger)
         : ostream_type(nullptr)
-        , buf_(access_type::select_stream(logger, Level{}))
+        , buf_(access_type::envs(logger).front().out)
         , logger_(logger)
     {
         this->init(&buf_);
@@ -185,11 +165,12 @@ protected:
     using access_type = detail::logger_access<logger_type>;
 
     template<class Notes>
-    void finalize(Notes& notes)
+    void finalize(finalized_buffer<Logger>& buf, Notes const& notes)
     {
-        buf_.base()->str(access_type::template format_prompt<Level>(
-            logger_, buf_.base()->str(), std::move(notes)
-        ));
+        access_type::template format_prompt<Level>(
+            buf,
+            logger_, buf_.base()->str(), notes
+        );
     }
 
     buf_type buf_;
@@ -213,13 +194,30 @@ public:
         auto& note_mtx = base_type::access_type::note_mtx(this->logger_);
         typename Logger::lock_type lock(note_mtx);
 
-        this->finalize(base_type::access_type::notes(this->logger_));
+        detail::finalized_buffer<Logger> buf;
+        auto& notes = base_type::access_type::notes(this->logger_);
+        this->finalize(buf, notes);
+        notes.clear();
+
+        auto const& envs = access_type::envs(logger_);
+        BOOST_ASSERT(!envs.empty());
+        auto it = std::begin(envs);
+
+        // self
+        buf_.base()->str(it->need_color ? buf.with_color : buf.without_color);
         this->buf_.emit();
+
+        // tees, if any
+        ++it;
+        for (auto last = std::end(envs); it != last; ++it) {
+            std::ostream os(it->out);
+            os << (it->need_color ? buf.with_color : buf.without_color) << std::flush;
+        }
     }
 };
 
 template<class Logger>
-class basic_logger_stream<Logger, logger_level::NOTE>
+class basic_logger_stream<Logger, logger_level::note>
     : public std::basic_ostringstream<typename Logger::char_type>
 {
     using base_type = std::basic_ostringstream<typename Logger::char_type>;

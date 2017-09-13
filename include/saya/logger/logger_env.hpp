@@ -14,22 +14,16 @@ struct basic_logger_env
 {
     using streambuf_type = typename Traits::streambuf_type;
 
-    streambuf_type* out{std::cout.rdbuf()};
-    streambuf_type* err{std::cerr.rdbuf()};
+    streambuf_type* out{std::cerr.rdbuf()};
     bool need_color{true};
 
     basic_logger_env() = default;
     basic_logger_env(basic_logger_env const&) = default;
     basic_logger_env(basic_logger_env&&) = default;
 
-    explicit basic_logger_env(std::streambuf* out_, std::streambuf* err_, bool need_color = true)
+    explicit basic_logger_env(std::streambuf* out_, bool need_color = true)
         : out(out_)
-        , err(err_)
         , need_color(need_color)
-    {}
-
-    explicit basic_logger_env(std::streambuf* all, bool need_color = true)
-        : basic_logger_env(all, all, need_color)
     {}
 
     ~basic_logger_env() noexcept = default;
