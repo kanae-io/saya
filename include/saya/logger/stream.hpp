@@ -44,6 +44,11 @@ protected:
         return logger->notes_;
     }
 
+    static inline typename Logger::string_type get_prompt(Logger* logger) noexcept
+    {
+        return logger->pf();
+    }
+
     template<class Level, class Notes>
     static inline void
     format_prompt(finalized_buffer<Logger>& buf, Logger* logger, typename Logger::string_type frag, Notes const& notes) /*noexcept*/
@@ -57,7 +62,7 @@ protected:
         // if (frag.empty()) return;
 
         std::unique_lock<typename Logger::mutex_type> lock(logger->prompt_mtx_);
-        auto const prompt = logger->prompt_;
+        auto const prompt = get_prompt(logger);
         lock.unlock();
 
         auto const eol = frag.find('\n');

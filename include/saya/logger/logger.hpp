@@ -11,6 +11,8 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <functional>
+
 
 namespace saya {
 
@@ -24,6 +26,7 @@ public:
     using char_type = CharT;
     using traits_type = Traits;
     using env_type = basic_logger_env<char_type, traits_type>;
+    using envs_type = std::deque<env_type>;
     using self_type = basic_logger<char_type, traits_type>;
     using string_type = typename traits_type::string_type;
     using ostream_type = typename traits_type::ostream_type;
@@ -39,8 +42,11 @@ public:
     using note_type = logger_stream_type<logger_level::note>;
     using notes_type = std::deque<note_type>;
 
+    using prompt_fetcher_type = std::function<string_type()>;
+
     explicit basic_logger(string_type const& prompt = {})
         : prompt_(prompt)
+        , pf_([this] () -> string_type { return this->prompt_; })
     {}
 
     explicit basic_logger(
@@ -48,9 +54,19 @@ public:
         string_type const& prompt = {}
     )
         : prompt_(prompt)
+        , pf_([this] () -> string_type { return this->prompt_; })
     {
         envs_.emplace_back(std::move(env));
     }
+
+    explicit basic_logger(
+        envs_type envs,
+        string_type const& prompt = {}
+    )
+        : prompt_(prompt)
+        , envs_(std::move(envs))
+        , pf_([this] () -> string_type { return this->prompt_; })
+    {}
 
     explicit basic_logger(basic_logger const& other, string_type const& prompt = {})
         : basic_logger(other.envs_, prompt)
@@ -103,6 +119,8 @@ public:
 
     env_type const& env() const { return envs_.front(); }
 
+    void set_prompt_fetcher(prompt_fetcher_type pf) { pf_ = std::move(pf); }
+
 protected:
     mutable mutex_type prompt_mtx_;
     mutable mutex_type note_mtx_;
@@ -111,7 +129,12 @@ protected:
 
     mutable notes_type notes_;
 
-    mutable std::deque<env_type> envs_;
+    mutable envs_type envs_;
+
+    string_type pf() const { return pf_(); }
+
+private:
+    prompt_fetcher_type pf_;
 };
 
 } // saya
