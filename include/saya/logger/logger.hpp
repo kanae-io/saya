@@ -26,7 +26,7 @@ public:
     using char_type = CharT;
     using traits_type = Traits;
     using env_type = basic_logger_env<char_type, traits_type>;
-    using envs_type = std::deque<env_type>;
+    using envs_type = basic_logger_env_set<env_type>;
     using self_type = basic_logger<char_type, traits_type>;
     using string_type = typename traits_type::string_type;
     using ostream_type = typename traits_type::ostream_type;
@@ -117,7 +117,7 @@ public:
         prompt_color_ = color_code;
     }
 
-    env_type const& env() const { return envs_.front(); }
+    envs_type const& envs() const { return envs_; }
 
     void set_prompt_fetcher(prompt_fetcher_type pf) { pf_ = std::move(pf); }
 

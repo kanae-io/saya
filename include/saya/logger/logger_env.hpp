@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 
+#include <deque>
 
 namespace saya {
 
@@ -34,6 +35,12 @@ struct basic_logger_env
 
 using logger_env = basic_logger_env<char>;
 using wlogger_env = basic_logger_env<wchar_t>;
+
+template<class Env>
+using basic_logger_env_set = std::deque<Env>;
+
+using logger_env_set = basic_logger_env_set<logger_env>;
+using wlogger_env_set = basic_logger_env_set<wlogger_env>;
 
 } // saya
 
