@@ -74,23 +74,23 @@ inline constexpr auto make_seq_concat(Seqs...)
 }
 
 
-template<int Ofs, class...>
+template<class T, T, class Seq>
 struct seq_offset;
 
-template<int Ofs, class T, T... Is>
-struct seq_offset<Ofs, std::integer_sequence<T, Is...>>
+template<class T, T Ofs, T... Is>
+struct seq_offset<T, Ofs, std::integer_sequence<T, Is...>>
 {
     using type = std::integer_sequence<T, (Ofs + Is)...>;
 };
 
-template<int Ofs, class Seq>
-using seq_offset_t = typename seq_offset<Ofs, Seq>::type;
+template<class T, T Ofs, class Seq>
+using seq_offset_t = typename seq_offset<T, Ofs, Seq>::type;
 
-template<int Ofs, class Seq>
+template<class T, T Ofs, class Seq>
 constexpr inline auto
 make_seq_offset(Seq)
 {
-    return seq_offset_t<Ofs, Seq>{};
+    return seq_offset_t<T, Ofs, Seq>{};
 }
 
 }} // saya
