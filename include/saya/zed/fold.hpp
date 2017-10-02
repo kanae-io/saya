@@ -45,54 +45,6 @@ struct fold_subtract<T, V1>
 template<class T, T... Args>
 constexpr auto fold_subtract_v = fold_subtract<T, Args...>::value;
 
-// ----------------------------------
-
-template<class...>
-struct seq_concat;
-
-template<class T, T... I1, T... I2, class... Rest>
-struct seq_concat<std::integer_sequence<T, I1...>, std::integer_sequence<T, I2...>, Rest...>
-{
-    using type = typename seq_concat<
-        std::integer_sequence<T, I1..., I2...>, Rest...
-    >::type;
-};
-
-template<class T, T... I1>
-struct seq_concat<std::integer_sequence<T, I1...>>
-{
-    using type = std::integer_sequence<T, I1...>;
-};
-
-template<class... Seqs>
-using seq_concat_t = typename seq_concat<Seqs...>::type;
-
-template<class... Seqs>
-inline constexpr auto make_seq_concat(Seqs...)
-{
-    return seq_concat_t<Seqs...>{};
-}
-
-
-template<class T, T, class Seq>
-struct seq_offset;
-
-template<class T, T Ofs, T... Is>
-struct seq_offset<T, Ofs, std::integer_sequence<T, Is...>>
-{
-    using type = std::integer_sequence<T, (Ofs + Is)...>;
-};
-
-template<class T, T Ofs, class Seq>
-using seq_offset_t = typename seq_offset<T, Ofs, Seq>::type;
-
-template<class T, T Ofs, class Seq>
-constexpr inline auto
-make_seq_offset(Seq)
-{
-    return seq_offset_t<T, Ofs, Seq>{};
-}
-
 }} // saya
 
 #endif
