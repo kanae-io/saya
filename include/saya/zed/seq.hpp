@@ -4,13 +4,135 @@
 #include <boost/variant/variant_fwd.hpp>
 
 #include <type_traits>
+#include <tuple>
 #include <utility>
 
 
 namespace saya { namespace zed {
 
+struct void_elem {};
+
+template<class T>
+struct is_void : std::conditional_t<std::is_void_v<T>, std::true_type, std::false_type> {};
+
+template<>
+struct is_void<void_elem> : std::true_type {};
+
+template<class T>
+constexpr bool is_void_v = is_void<T>::value;
+
+
 template<class...>
-struct empty_seq {};
+struct empty_seq
+{
+    static constexpr bool is_empty = true;
+};
+
+template<class... Args>
+struct maybe_empty_seq
+{
+    static constexpr bool is_empty = sizeof...(Args) == 0;
+};
+
+template<class Seq>
+struct compact;
+
+template<class...>
+struct is_empty : std::false_type {};
+
+template<class... VoidArgs>
+struct is_empty<empty_seq<VoidArgs...>> : std::true_type {};
+
+template<class... Args>
+struct is_empty<maybe_empty_seq<Args...>> : std::integral_constant<bool, compact<maybe_empty_seq<Args...>>::type::is_empty> {};
+
+template<>
+struct is_empty<std::tuple<void>> : std::true_type {};
+
+
+namespace detail {
+
+template<class Seq, class...>
+struct compact_impl;
+
+template<class... SeqArgs>
+struct compact_impl<maybe_empty_seq<SeqArgs...>>
+{
+    using type = maybe_empty_seq<SeqArgs...>;
+};
+
+template<class Arg1, class... SeqArgs, class... Rest>
+struct compact_impl<maybe_empty_seq<SeqArgs...>, Arg1, Rest...>
+{
+    using type = std::conditional_t<
+        is_void_v<Arg1>,
+        typename compact_impl<maybe_empty_seq<SeqArgs...>, Rest...>::type,
+        typename compact_impl<maybe_empty_seq<SeqArgs..., Arg1>, Rest...>::type
+    >;
+};
+
+template<class Seq>
+struct compact_impl_dispatch;
+
+template<class... Args>
+struct compact_impl_dispatch<
+    maybe_empty_seq<Args...>
+>
+    : compact_impl<maybe_empty_seq<>, Args...>
+{};
+
+} // detail
+
+
+template<class Seq>
+struct compact : detail::compact_impl_dispatch<Seq> {};
+
+template<class Seq>
+using compact_t = typename compact<Seq>::type;
+
+
+namespace detail {
+
+template<class Seq, class... Args>
+struct reversed_impl;
+
+template<class... SeqArgs>
+struct reversed_impl<std::tuple<SeqArgs...>>
+{
+    using type = std::tuple<SeqArgs...>;
+};
+
+template<class Arg1, class... SeqArgs, class... Rest>
+struct reversed_impl<std::tuple<SeqArgs...>, Arg1, Rest...>
+{
+    using type = typename reversed_impl<std::tuple<Arg1, SeqArgs...>, Rest...>::type;
+};
+
+template<class Seq>
+struct reversed_impl_dispatch;
+
+template<class... Args>
+struct reversed_impl_dispatch<
+    std::tuple<Args...>
+>
+    : reversed_impl<std::tuple<>, Args...>
+{};
+
+template<class... Args>
+struct reversed_impl_dispatch<
+    maybe_empty_seq<Args...>
+>
+    : reversed_impl<std::tuple<>, Args...>
+{};
+
+} // detail
+
+template<class Seq>
+struct reversed : detail::reversed_impl_dispatch<Seq> {};
+
+template<class Seq>
+using reversed_t = typename reversed<Seq>::type;
+
 
 template<class...>
 struct t_seq_concat;

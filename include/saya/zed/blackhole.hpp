@@ -1,7 +1,7 @@
-#ifndef SAYA_BLACKHOLE_HPP
-#define SAYA_BLACKHOLE_HPP
+#ifndef SAYA_ZED_BLACKHOLE_HPP
+#define SAYA_ZED_BLACKHOLE_HPP
 
-namespace saya {
+namespace saya { namespace zed {
 
 // usage:
 //
@@ -16,6 +16,6 @@ namespace saya {
 template<class... T>
 inline void blackhole(T&&...) {}
 
-} // saya
+}} // saya
 
 #endif
