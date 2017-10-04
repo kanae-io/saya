@@ -127,13 +127,16 @@ struct fold_logical_or<Cond1, Cond2, Rest...>
         Cond1 || Cond2,
         std::true_type, // short circuit
         typename fold_logical_or<
-            /* Cond1 || Cond2, */ Rest...
+            /* Cond1 || Cond2, */ true, Rest...
         >::type
     >;
 };
 
 template<bool... Conds>
-constexpr bool fold_logical_or_v = fold_logical_or<Conds...>::value;
+using fold_logical_or_t = typename fold_logical_or<Conds...>::type;
+
+template<bool... Conds>
+constexpr bool fold_logical_or_v = fold_logical_or_t<Conds...>::value;
 
 
 template<bool... Conds>
@@ -151,14 +154,17 @@ struct fold_logical_and<Cond1, Cond2, Rest...>
     using type = std::conditional_t<
         Cond1 && Cond2,
         typename fold_logical_and<
-            /* Cond1 || Cond2, */ Rest...
+            /* Cond1 || Cond2, */ true, Rest...
         >::type,
         std::false_type // short circuit
     >;
 };
 
 template<bool... Conds>
-constexpr bool fold_logical_and_v = fold_logical_and<Conds...>::value;
+using fold_logical_and_t = typename fold_logical_and<Conds...>::type;
+
+template<bool... Conds>
+constexpr bool fold_logical_and_v = fold_logical_and_t<Conds...>::value;
 
 }} // saya
 

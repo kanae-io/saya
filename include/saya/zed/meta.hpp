@@ -34,6 +34,22 @@ public:
 };
 
 
+template<class... Args>
+struct auto_integral_sequence;
+
+template<class T, T... Vs>
+struct auto_integral_sequence<
+    std::integral_constant<T, Vs>...
+>
+{
+    using type = std::integer_sequence<T, Vs...>;
+};
+
+template<class... Args>
+using auto_integral_sequence_t = typename auto_integral_sequence<Args...>::type;
+
+
+
 template<class T1, class T2>
 struct eq : std::conditional_t<(T1::value == T2::value), std::true_type, std::false_type> {};
 
@@ -42,10 +58,10 @@ struct not_eq : std::conditional_t<(T1::value != T2::value), std::true_type, std
 
 
 template<class T>
-struct is_true : std::is_same<T, std::true_type> {};
+struct is_true : std::conditional_t<T::value, std::true_type, std::false_type> {};
 
 template<class T>
-struct is_false : std::is_same<T, std::false_type> {};
+struct is_false : std::conditional_t<!T::value, std::true_type, std::false_type> {};
 
 
 template<class T1, class T2>
@@ -245,8 +261,25 @@ template<
 >
 struct meta_v_dispatcher
 {
-    using type = bool_seq<
-        meta_apply<Template, MetaTemplate, Args>::value...
+    using type = auto_integral_sequence_t<
+        typename aux_::meta_apply_t<Template, MetaTemplate, Args>::type...
+    >;
+};
+
+template<
+    template<class...>
+    class Template,
+    class MetaTemplate,
+    class... Args
+>
+struct meta_v_dispatcher<
+    Template,
+    MetaTemplate,
+    std::tuple<Args...>
+>
+{
+    using type = auto_integral_sequence_t<
+        typename aux_::meta_apply_t<Template, MetaTemplate, Args>::type...
     >;
 };
 
@@ -271,7 +304,7 @@ template<
 >
 struct all_of_dispatcher
 {
-    using type = bool_dispatch_t<fold_logical_and, meta_v<Template, MetaTemplate, Args...>>;
+    using type = typename bool_dispatch_t<fold_logical_and, meta_v<Template, MetaTemplate, Args...>>::type;
 };
 
 } // detail
@@ -304,7 +337,7 @@ template<
 >
 struct any_of_dispatcher
 {
-    using type = bool_dispatch<fold_logical_or, meta_v<Template, MetaTemplate, Args...>>;
+    using type = typename bool_dispatch_t<fold_logical_or, meta_v<Template, MetaTemplate, Args...>>::type;
 };
 
 } // detail
@@ -341,64 +374,16 @@ template<
     template<class, class>
     class BinaryTemplate,
     class MetaTemplate,
-    class Arg1, class Arg2, class... Rest
->
-struct reduced_impl<
-    std::tuple<>,
-    BinaryTemplate,
-    MetaTemplate,
-    Arg1, Arg2, Rest...
->
-{
-    using type = typename reduced_impl<
-        std::tuple<BinaryTemplate<Arg1, Arg2>>,
-        BinaryTemplate,
-        MetaTemplate,
-        Rest...
-    >;
-};
-
-template<
-    template<class, class>
-    class BinaryTemplate,
-    class MetaTemplate,
-    class PrevA, class PrevB,
-    class Last,
-    class... Result
->
-struct reduced_impl<
-    std::tuple<
-        Result...,
-        BinaryTemplate<PrevA, PrevB>
-    >,
-    BinaryTemplate,
-    MetaTemplate,
-    Last
->
-{
-    using type = std::tuple<
-        Result...,
-        BinaryTemplate<PrevA, PrevB>,
-        BinaryTemplate<PrevB, Last>
-    >;
-};
-
-template<
-    template<class, class>
-    class BinaryTemplate,
-    class MetaTemplate,
-    class PrevA, class PrevB,
+    class Prev,
     class Current,
     class... Result,
     class... Rest
 >
 struct reduced_impl<
-    std::tuple<
-        Result...,
-        BinaryTemplate<PrevA, PrevB>
-    >,
+    std::tuple<Result...>,
     BinaryTemplate,
     MetaTemplate,
+    Prev,
     Current,
     Rest...
 >
@@ -406,13 +391,30 @@ struct reduced_impl<
     using type = typename reduced_impl<
         std::tuple<
             Result...,
-            BinaryTemplate<PrevA, PrevB>,
-            BinaryTemplate<PrevB, Current>
+            BinaryTemplate<Prev, Current>
         >,
         BinaryTemplate,
         MetaTemplate,
+        Current,
         Rest...
     >::type;
+};
+
+template<
+    class Result,
+    template<class, class>
+    class BinaryTemplate,
+    class MetaTemplate,
+    class Prev
+>
+struct reduced_impl<
+    Result,
+    BinaryTemplate,
+    MetaTemplate,
+    Prev
+>
+{
+    using type = Result;
 };
 
 } // detail
@@ -433,6 +435,7 @@ struct reduced
     >::type;
 };
 
+
 template<
     template<class, class>
     class BinaryTemplate,
@@ -445,12 +448,7 @@ struct reduced<
     std::tuple<Args...>
 >
 {
-    using type = typename detail::reduced_impl<
-        std::tuple<>,
-        BinaryTemplate,
-        MetaTemplate,
-        Args...
-    >::type;
+    using type = typename reduced<BinaryTemplate, MetaTemplate, Args...>::type;
 };
 
 template<
