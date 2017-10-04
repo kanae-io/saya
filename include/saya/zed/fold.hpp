@@ -46,6 +46,71 @@ template<class T, T... Args>
 constexpr auto fold_subtract_v = fold_subtract<T, Args...>::value;
 
 
+// ---------------------------------------
+
+template<bool... Bs>
+struct bool_seq {};
+
+template<class T>
+struct to_bool_seq;
+
+template<bool... Bs>
+struct to_bool_seq<
+    bool_seq<Bs...>
+>
+{
+    using type = bool_seq<Bs...>;
+};
+
+template<bool... Bs>
+struct to_bool_seq<
+    std::integer_sequence<bool, Bs...>
+>
+{
+    using type = bool_seq<Bs...>;
+};
+
+template<
+    template<bool...>
+    class bool_template,
+    class BoolSeq
+>
+struct bool_dispatch;
+
+template<
+    template<bool...>
+    class bool_template,
+    bool... Bs
+>
+struct bool_dispatch<
+    bool_template,
+    bool_seq<Bs...>
+>
+{
+    using type = bool_template<Bs...>;
+};
+
+template<
+    template<bool...>
+    class bool_template,
+    bool... Bs
+>
+struct bool_dispatch<
+    bool_template,
+    std::integer_sequence<bool, Bs...>
+>
+{
+    using type = bool_template<Bs...>;
+};
+
+template<
+    template<bool...>
+    class bool_template,
+    class BoolSeq
+>
+using bool_dispatch_t = typename bool_dispatch<bool_template, BoolSeq>::type;
+
+
 template<bool... Conds>
 struct fold_logical_or /* never defined */;
 
@@ -68,8 +133,32 @@ struct fold_logical_or<Cond1, Cond2, Rest...>
 };
 
 template<bool... Conds>
-using fold_logical_or_t = typename fold_logical_or<Conds...>::type;
+constexpr bool fold_logical_or_v = fold_logical_or<Conds...>::value;
 
+
+template<bool... Conds>
+struct fold_logical_and /* never defined */;
+
+template<bool Cond1>
+struct fold_logical_and<Cond1>
+{
+    using type = std::integral_constant<bool, Cond1>;
+};
+
+template<bool Cond1, bool Cond2, bool... Rest>
+struct fold_logical_and<Cond1, Cond2, Rest...>
+{
+    using type = std::conditional_t<
+        Cond1 && Cond2,
+        typename fold_logical_and<
+            /* Cond1 || Cond2, */ Rest...
+        >::type,
+        std::false_type // short circuit
+    >;
+};
+
+template<bool... Conds>
+constexpr bool fold_logical_and_v = fold_logical_and<Conds...>::value;
 
 }} // saya
 
