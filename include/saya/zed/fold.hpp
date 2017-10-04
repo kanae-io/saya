@@ -111,60 +111,78 @@ template<
 using bool_dispatch_t = typename bool_dispatch<bool_template, BoolSeq>::type;
 
 
+namespace detail {
+
 template<bool... Conds>
-struct fold_logical_or /* never defined */;
+struct fold_logical_or_impl : std::false_type {};
 
 template<bool Cond1>
-struct fold_logical_or<Cond1>
-{
-    using type = std::integral_constant<bool, Cond1>;
-};
+struct fold_logical_or_impl<Cond1> : std::integral_constant<bool, Cond1> {};
 
 template<bool Cond1, bool Cond2, bool... Rest>
-struct fold_logical_or<Cond1, Cond2, Rest...>
+struct fold_logical_or_impl<Cond1, Cond2, Rest...>
 {
     using type = std::conditional_t<
         Cond1 || Cond2,
         std::true_type, // short circuit
-        typename fold_logical_or<
-            /* Cond1 || Cond2, */ true, Rest...
+        typename fold_logical_or_impl<
+            /* Cond1 || Cond2, */ Rest...
         >::type
     >;
 };
 
-template<bool... Conds>
-using fold_logical_or_t = typename fold_logical_or<Conds...>::type;
+} // detail
+
+template<bool Cond1, bool Cond2, bool... Rest>
+struct fold_logical_or
+{
+    using type = typename detail::fold_logical_or_impl<Cond1, Cond2, Rest...>::type;
+};
+
+template<bool Cond1, bool Cond2, bool... Rest>
+using fold_logical_or_t = typename fold_logical_or<Cond1, Cond2, Rest...>::type;
+
+template<bool Cond1, bool Cond2, bool... Rest>
+constexpr bool fold_logical_or_v = fold_logical_or_t<Cond1, Cond2, Rest...>::value;
+
+
+namespace detail {
 
 template<bool... Conds>
-constexpr bool fold_logical_or_v = fold_logical_or_t<Conds...>::value;
-
-
-template<bool... Conds>
-struct fold_logical_and /* never defined */;
+struct fold_logical_and_impl : std::true_type {};
 
 template<bool Cond1>
-struct fold_logical_and<Cond1>
+struct fold_logical_and_impl<Cond1>
 {
     using type = std::integral_constant<bool, Cond1>;
 };
 
 template<bool Cond1, bool Cond2, bool... Rest>
-struct fold_logical_and<Cond1, Cond2, Rest...>
+struct fold_logical_and_impl<Cond1, Cond2, Rest...>
 {
     using type = std::conditional_t<
         Cond1 && Cond2,
-        typename fold_logical_and<
-            /* Cond1 || Cond2, */ true, Rest...
+        typename fold_logical_and_impl<
+            /* Cond1 || Cond2, */ Rest...
         >::type,
         std::false_type // short circuit
     >;
 };
 
-template<bool... Conds>
-using fold_logical_and_t = typename fold_logical_and<Conds...>::type;
+} // detail
 
-template<bool... Conds>
-constexpr bool fold_logical_and_v = fold_logical_and_t<Conds...>::value;
+
+template<bool Cond1, bool Cond2, bool... Rest>
+struct fold_logical_and
+{
+    using type = typename detail::fold_logical_and_impl<Cond1, Cond2, Rest...>::type;
+};
+
+template<bool Cond1, bool Cond2, bool... Rest>
+using fold_logical_and_t = typename fold_logical_and<Cond1, Cond2, Rest...>::type;
+
+template<bool Cond1, bool Cond2, bool... Rest>
+constexpr bool fold_logical_and_v = fold_logical_and_t<Cond1, Cond2, Rest...>::value;
 
 }} // saya
 
