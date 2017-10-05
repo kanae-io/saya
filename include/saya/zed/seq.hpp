@@ -23,19 +23,43 @@ constexpr bool is_void_v = is_void<T>::value;
 
 
 template<class...>
-struct empty_seq
-{
-    static constexpr bool is_empty = true;
-};
-
-template<class... Args>
-struct maybe_empty_seq
-{
-    static constexpr bool is_empty = sizeof...(Args) == 0;
-};
+struct empty_seq {};
 
 template<class Seq>
 struct compact;
+
+template<class Seq>
+using compact_t = typename compact<Seq>::type;
+
+
+
+namespace detail {
+
+template<std::size_t I, class... Args>
+struct count_impl
+{
+    static constexpr auto value = count_impl<I + 1, Args...>::value;
+};
+
+template<std::size_t I>
+struct count_impl<I>
+{
+    static constexpr auto value = I;
+};
+
+} // detail
+
+template<class T>
+struct count;
+
+template<class... Args>
+struct count<std::tuple<Args...>>
+    : std::integral_constant<std::size_t, detail::count_impl<0, Args...>::value>
+{};
+
+template<class T>
+constexpr auto count_v = count<T>::value;
+
 
 template<class...>
 struct is_empty : std::false_type {};
@@ -43,8 +67,11 @@ struct is_empty : std::false_type {};
 template<class... VoidArgs>
 struct is_empty<empty_seq<VoidArgs...>> : std::true_type {};
 
-template<class... Args>
-struct is_empty<maybe_empty_seq<Args...>> : std::integral_constant<bool, compact<maybe_empty_seq<Args...>>::type::is_empty> {};
+template<>
+struct is_empty<std::tuple<>> : std::true_type {};
+
+template<class Arg1, class... Args>
+struct is_empty<std::tuple<Arg1, Args...>> : std::integral_constant<bool, is_empty<compact_t<std::tuple<Arg1, Args...>>>::value> {};
 
 template<>
 struct is_empty<std::tuple<void>> : std::true_type {};
@@ -56,18 +83,18 @@ template<class Seq, class...>
 struct compact_impl;
 
 template<class... SeqArgs>
-struct compact_impl<maybe_empty_seq<SeqArgs...>>
+struct compact_impl<std::tuple<SeqArgs...>>
 {
-    using type = maybe_empty_seq<SeqArgs...>;
+    using type = std::tuple<SeqArgs...>;
 };
 
 template<class Arg1, class... SeqArgs, class... Rest>
-struct compact_impl<maybe_empty_seq<SeqArgs...>, Arg1, Rest...>
+struct compact_impl<std::tuple<SeqArgs...>, Arg1, Rest...>
 {
     using type = std::conditional_t<
         is_void_v<Arg1>,
-        typename compact_impl<maybe_empty_seq<SeqArgs...>, Rest...>::type,
-        typename compact_impl<maybe_empty_seq<SeqArgs..., Arg1>, Rest...>::type
+        typename compact_impl<std::tuple<SeqArgs...>, Rest...>::type,
+        typename compact_impl<std::tuple<SeqArgs..., Arg1>, Rest...>::type
     >;
 };
 
@@ -76,9 +103,9 @@ struct compact_impl_dispatch;
 
 template<class... Args>
 struct compact_impl_dispatch<
-    maybe_empty_seq<Args...>
+    std::tuple<Args...>
 >
-    : compact_impl<maybe_empty_seq<>, Args...>
+    : compact_impl<std::tuple<>, Args...>
 {};
 
 } // detail
@@ -86,9 +113,6 @@ struct compact_impl_dispatch<
 
 template<class Seq>
 struct compact : detail::compact_impl_dispatch<Seq> {};
-
-template<class Seq>
-using compact_t = typename compact<Seq>::type;
 
 
 namespace detail {
@@ -114,13 +138,6 @@ struct reversed_impl_dispatch;
 template<class... Args>
 struct reversed_impl_dispatch<
     std::tuple<Args...>
->
-    : reversed_impl<std::tuple<>, Args...>
-{};
-
-template<class... Args>
-struct reversed_impl_dispatch<
-    maybe_empty_seq<Args...>
 >
     : reversed_impl<std::tuple<>, Args...>
 {};
