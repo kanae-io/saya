@@ -25,12 +25,36 @@ constexpr bool is_void_v = is_void<T>::value;
 template<class...>
 struct empty_seq {};
 
-template<class Seq>
-struct compact;
+template<class...>
+struct any_holder {};
 
-template<class Seq>
-using compact_t = typename compact<Seq>::type;
+template<
+    template<class...> class FromTuple,
+    template<class...> class ToTuple,
+    class Holder
+>
+struct rewrap;
 
+template<
+    template<class...> class FromTuple,
+    template<class...> class ToTuple,
+    class... Ts
+>
+struct rewrap<
+    FromTuple,
+    ToTuple,
+    FromTuple<Ts...>
+>
+{
+    using type = ToTuple<Ts...>;
+};
+
+template<
+    template<class...> class FromTuple,
+    template<class...> class ToTuple,
+    class Holder
+>
+using rewrap_t = typename rewrap<FromTuple, ToTuple, Holder>::type;
 
 
 namespace detail {
@@ -69,86 +93,6 @@ struct is_empty<empty_seq<VoidArgs...>> : std::true_type {};
 
 template<>
 struct is_empty<std::tuple<>> : std::true_type {};
-
-template<class Arg1, class... Args>
-struct is_empty<std::tuple<Arg1, Args...>> : std::integral_constant<bool, is_empty<compact_t<std::tuple<Arg1, Args...>>>::value> {};
-
-template<>
-struct is_empty<std::tuple<void>> : std::true_type {};
-
-
-namespace detail {
-
-template<class Seq, class...>
-struct compact_impl;
-
-template<class... SeqArgs>
-struct compact_impl<std::tuple<SeqArgs...>>
-{
-    using type = std::tuple<SeqArgs...>;
-};
-
-template<class Arg1, class... SeqArgs, class... Rest>
-struct compact_impl<std::tuple<SeqArgs...>, Arg1, Rest...>
-{
-    using type = std::conditional_t<
-        is_void_v<Arg1>,
-        typename compact_impl<std::tuple<SeqArgs...>, Rest...>::type,
-        typename compact_impl<std::tuple<SeqArgs..., Arg1>, Rest...>::type
-    >;
-};
-
-template<class Seq>
-struct compact_impl_dispatch;
-
-template<class... Args>
-struct compact_impl_dispatch<
-    std::tuple<Args...>
->
-    : compact_impl<std::tuple<>, Args...>
-{};
-
-} // detail
-
-
-template<class Seq>
-struct compact : detail::compact_impl_dispatch<Seq> {};
-
-
-namespace detail {
-
-template<class Seq, class... Args>
-struct reversed_impl;
-
-template<class... SeqArgs>
-struct reversed_impl<std::tuple<SeqArgs...>>
-{
-    using type = std::tuple<SeqArgs...>;
-};
-
-template<class Arg1, class... SeqArgs, class... Rest>
-struct reversed_impl<std::tuple<SeqArgs...>, Arg1, Rest...>
-{
-    using type = typename reversed_impl<std::tuple<Arg1, SeqArgs...>, Rest...>::type;
-};
-
-template<class Seq>
-struct reversed_impl_dispatch;
-
-template<class... Args>
-struct reversed_impl_dispatch<
-    std::tuple<Args...>
->
-    : reversed_impl<std::tuple<>, Args...>
-{};
-
-} // detail
-
-template<class Seq>
-struct reversed : detail::reversed_impl_dispatch<Seq> {};
-
-template<class Seq>
-using reversed_t = typename reversed<Seq>::type;
 
 
 template<class...>
