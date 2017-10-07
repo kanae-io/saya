@@ -107,6 +107,19 @@ template<
 using lazy_unwrap_t = typename lazy_unwrap<Tuple, Args...>::type;
 
 
+template<template<class...> class Tuple, std::size_t I, class T>
+struct element;
+
+template<template<class...> class Tuple, std::size_t I, class Head, class... Tail>
+struct element<Tuple, I, Tuple<Head, Tail...>> : element<Tuple, I - 1, Tuple<Tail...>> {};
+
+template<template<class...> class Tuple, class Head, class... Tail>
+struct element<Tuple, 0, Tuple<Head, Tail...>> { using type = Head; };
+
+template<template<class...> class Tuple, std::size_t I, class T>
+using element_t = typename element<Tuple, I, T>::type;
+
+
 namespace detail {
 
 namespace aux_ {
