@@ -133,17 +133,31 @@ struct fold_logical_or_impl<Cond1, Cond2, Rest...>
 
 } // detail
 
+
+template<bool... Conds>
+struct fold_logical_or;
+
 template<bool Cond1, bool Cond2, bool... Rest>
-struct fold_logical_or
+struct fold_logical_or<
+    Cond1, Cond2, Rest...
+>
 {
     using type = typename detail::fold_logical_or_impl<Cond1, Cond2, Rest...>::type;
 };
 
-template<bool Cond1, bool Cond2, bool... Rest>
-using fold_logical_or_t = typename fold_logical_or<Cond1, Cond2, Rest...>::type;
+#if 0
+template<bool Cond1>
+struct fold_logical_or<Cond1>
+{
+    static_assert(false, "if you see this, you passed only 1 argument to logical or (i.e. {Cond1 || ???})");
+};
+#endif
 
-template<bool Cond1, bool Cond2, bool... Rest>
-constexpr bool fold_logical_or_v = fold_logical_or_t<Cond1, Cond2, Rest...>::value;
+template<bool... Conds>
+using fold_logical_or_t = typename fold_logical_or<Conds...>::type;
+
+template<bool... Conds>
+constexpr bool fold_logical_or_v = fold_logical_or_t<Conds...>::value;
 
 
 namespace detail {

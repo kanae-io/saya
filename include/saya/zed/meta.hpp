@@ -122,6 +122,102 @@ using element_t = typename element<Tuple, I, T>::type;
 
 namespace detail {
 
+template<
+    template<class...>
+    class Tuple,
+    class A,
+    class T,
+    class HeadSeq,
+    class TailSeq
+>
+struct element_assign_impl;
+
+template<
+    template<class...>
+    class Tuple,
+    class A,
+    class T,
+    std::size_t... HeadIs,
+    std::size_t... TailIs
+>
+struct element_assign_impl<
+    Tuple, A, T,
+    std::index_sequence<HeadIs...>, std::index_sequence<TailIs...>
+>
+{
+    using type = Tuple<
+        element_t<Tuple, HeadIs, A>...,
+        T,
+        element_t<Tuple, TailIs, A>...
+    >;
+};
+
+template<template<class...> class Tuple, class A, std::size_t MaxI, std::size_t I, class T>
+struct element_assign_dispatch
+{
+    // MaxI = 6, I = 4
+    // [0, 1, 2, 3, 4, 5, 6] -> [0, 1, 2, 3], T, [5, 6]
+    using type = typename detail::element_assign_impl<
+        Tuple, A, T,
+        std::make_index_sequence<I>,
+        i_seq_offset_t<std::size_t, I + 1, std::make_index_sequence<MaxI - I>>
+    >::type;
+};
+
+template<
+    template<class...>
+    class Tuple,
+    std::size_t MaxI,
+    class T,
+    class Head,
+    class... Tail
+>
+struct element_assign_dispatch<
+    Tuple, Tuple<Head, Tail...>, MaxI, 0, T
+>
+{
+    using type = Tuple<T, Tail...>;
+};
+
+template<
+    template<class...>
+    class Tuple,
+    std::size_t MaxI,
+    class T,
+    class Tail,
+    class... Head
+>
+struct element_assign_dispatch<
+    Tuple, Tuple<Head..., Tail>, MaxI, MaxI, T
+>
+{
+    using type = Tuple<Head..., T>;
+};
+
+} // detail
+
+
+template<template<class...> class Tuple, class A, std::size_t I, class T>
+struct element_assign;
+
+template<
+    template<class...>
+    class Tuple,
+    std::size_t I, class T, class... Args
+>
+struct element_assign<
+    Tuple, Tuple<Args...>, I, T
+>
+{
+    using type = typename detail::element_assign_dispatch<Tuple, Tuple<Args...>, sizeof...(Args) - 1, I, T>::type;
+};
+
+template<template<class...> class Tuple, class A, std::size_t I, class T>
+using element_assign_t = typename element_assign<Tuple, A, I, T>::type;
+
+
+namespace detail {
+
 namespace aux_ {
 
 template<
@@ -409,11 +505,25 @@ template<
     class MetaTemplate,
     class... Args
 >
-struct any_of_dispatcher
+struct any_of_impl
 {
-    using type = typename bool_dispatch_t<fold_logical_or, meta_v<Template, MetaTemplate, Args...>>::type;
+    using type = fold_logical_or_t<meta_apply<Template, MetaTemplate, Args>::value...>;
 };
 
+template<
+    template<class...>
+    class Template,
+    class MetaTemplate,
+    template<class...>
+    class Tuple,
+    class... Args
+>
+struct any_of_impl<
+    Template, MetaTemplate, lazy_unwrap<Tuple, Args...>
+>
+{
+    using type = fold_logical_or_t<meta_apply<Template, MetaTemplate, Args>::value...>;
+};
 } // detail
 
 template<
@@ -422,7 +532,7 @@ template<
     class MetaTemplate,
     class... Args
 >
-using any_of = typename detail::any_of_dispatcher<Template, MetaTemplate, Args...>::type;
+using any_of = typename detail::any_of_impl<Template, MetaTemplate, Args...>::type;
 
 template<
     template<class...>
@@ -431,6 +541,52 @@ template<
     class... Args
 >
 constexpr bool any_of_v = any_of<Template, MetaTemplate, Args...>::value;
+
+
+template<
+    template<class...>
+    class Tuple,
+    template<class...>
+    class CondTemplate,
+    class MetaTemplate,
+    class TrueType, class FalseType,
+    class A
+>
+struct meta_conditional;
+
+template<
+    template<class...>
+    class Tuple,
+    template<class...>
+    class CondTemplate,
+    class MetaTemplate,
+    class TrueType, class FalseType,
+    class... Args
+>
+struct meta_conditional<
+    Tuple, CondTemplate, MetaTemplate, TrueType, FalseType,
+    Tuple<Args...>
+>
+{
+    using type = std::tuple<
+        typename std::conditional<
+            meta_apply<CondTemplate, MetaTemplate, Args>::value,
+            TrueType, FalseType
+        >::type...
+    >;
+};
+
+
+template<
+    template<class...>
+    class Tuple,
+    template<class...>
+    class CondTemplate,
+    class MetaTemplate,
+    class TrueType, class FalseType,
+    class A
+>
+using meta_conditional_t = typename meta_conditional<Tuple, CondTemplate, MetaTemplate, TrueType, FalseType, A>::type;
 
 
 namespace detail {
