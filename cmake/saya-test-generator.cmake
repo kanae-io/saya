@@ -1,5 +1,9 @@
 function(saya_remove_gtest_warnings target)
-  set_target_properties(${target} PROPERTIES COMPILE_FLAGS "-Wno-missing-field-initializers")
+  set(flags "")
+  if(NOT MSVC)
+    set(fags "-Wno-missing-field-initializers")
+  endif()
+  set_target_properties(${target} PROPERTIES COMPILE_FLAGS "${flags}")
 endfunction()
 
 function(saya_enable_gtest gtest_source_dir test_entrypoint_src include_dirs system_include_dirs compile_definitions)
